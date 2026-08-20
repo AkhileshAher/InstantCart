@@ -1,24 +1,22 @@
 import { ArrowUpRightIcon, BikeIcon, ChevronDownIcon, LogOutIcon, MapPinIcon, MenuIcon, PackageIcon, SearchIcon, ShieldIcon, ShoppingCartIcon, UserIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 
 function Navbar() {
 
     const user: any = { name: "John Doe", email: "john@example.com", isAdmin: true }
 
-    const { cartCount, setIsCartOpen } = {
-        cartCount: 5,
-        setIsCartOpen: (_data: any) => { }
-    };
+    const { cartCount, setIsCartOpen } = useCart();
 
     const [searchQuery, setSearchQuery] = useState("");
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const navigate = useNavigate();
 
-    const handleSearch = (e : SubmitEvent) => {
+    const handleSearch = (e: SubmitEvent) => {
         e.preventDefault();
-        if(searchQuery.trim()) {
+        if (searchQuery.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
             setSearchQuery("");
         }
@@ -102,7 +100,7 @@ function Navbar() {
                                                 <Link to='/admin/products'
                                                     className="dropdown-link"><ShieldIcon size={16} className="text-orange-600" /><span className="text-orange-600">Admin Panel</span></Link>
                                             )}
-                                            { user && (
+                                            {user && (
                                                 <div>
                                                     <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 w-full transition-colors">
                                                         <LogOutIcon size={16} /> Logout
