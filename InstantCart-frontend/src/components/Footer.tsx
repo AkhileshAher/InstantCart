@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { footerData } from "../assets/data"
+import logo from "../assets/Logo.png"
 
 
 const Footer = () => {
@@ -11,7 +12,7 @@ const Footer = () => {
                     {/* Brand */}
                     <div>
                         <Link to={"/"} className="flex items-center gap-2 text-[22px] font-medium shrink-0">
-                            <img src="Logo.png" alt="InstantCartLogo" className="h-10 w-15" /> <span className="text-white font-bold">InstantCart</span>
+                            <img src={logo} alt="InstantCartLogo" className="h-10 w-15" /> <span className="text-white font-bold">InstantCart</span>
                         </Link>
                         <p className="text-sm font-medium p-2 text-white/70 mb-4">{footerData.brand.description}</p>
                         <div className="flex gap-3">

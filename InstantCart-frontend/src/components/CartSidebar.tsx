@@ -97,7 +97,7 @@ const CartSidebar = () => {
                             <span>{currency}{grandTotal.toFixed(2)}</span>
                         </div>
 
-                        <button onClick={() => { setIsCartOpen(false); navigate('/'); window.scrollTo(0, 0) }} className="w-full py-3 bg-app-orange text-white font-semibold rounded-xl hover:bg-app-orange-dark transition-colors flex-center gap-2 active:scale-[0.98]">
+                        <button onClick={() => { setIsCartOpen(false); navigate('/checkout'); window.scrollTo(0, 0) }} className="w-full py-3 bg-app-orange text-white font-semibold rounded-xl hover:bg-app-orange-dark transition-colors flex-center gap-2 active:scale-[0.98]">
                             Proceed to Checkout <ArrowRightIcon className="size-4" />
                         </button>
 

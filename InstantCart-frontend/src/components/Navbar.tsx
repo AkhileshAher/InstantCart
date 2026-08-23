@@ -2,6 +2,7 @@ import { ArrowUpRightIcon, BikeIcon, ChevronDownIcon, LogOutIcon, MapPinIcon, Me
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import logo from "../assets/Logo.png";
 
 
 function Navbar() {
@@ -31,7 +32,7 @@ function Navbar() {
         <nav className="bg-white sticky top-0 z-50 border-b border-app-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 gap-4">
                 <Link to={"/"} className="flex items-center gap-2 text-[22px] font-medium shrink-0">
-                    <img src="Logo.png" alt="InstantCartLogo" className="h-10 w-15" /> <span className="text-green-900 font-bold">InstantCart</span>
+                    <img src={logo} alt="InstantCartLogo" className="h-10 w-15" /> <span className="text-green-900 font-bold">InstantCart</span>
                 </Link>
 
                 <div className="w-full flex items-center justify-end gap-4 lg:gap-10">
