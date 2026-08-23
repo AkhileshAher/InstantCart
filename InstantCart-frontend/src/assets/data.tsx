@@ -1,4 +1,4 @@
-import { Clock, LeafIcon, MailIcon, MapPinIcon, PhoneIcon, ShieldCheck, TruckIcon } from "lucide-react";
+import { Clock, ClockIcon, LeafIcon, MailIcon, MapPinIcon, PhoneIcon, ShieldCheck, ShieldCheckIcon, TruckIcon } from "lucide-react";
 
 
 import { SiFacebook, SiX, SiInstagram } from "@icons-pack/react-simple-icons";
@@ -13,6 +13,7 @@ import personal_care from "./personal_care.png";
 import baby_care from "./baby_care.png";
 import meat_seafood from "./meat_seafood.png";
 import delivery_truck from "./delivery_truck.svg";
+import logo from "./Logo.png"
 
 export { delivery_truck };
 
@@ -55,12 +56,12 @@ export const deliveryPartnerLoginImage = "https://images.unsplash.com/photo-1610
 
 export const appPromoBannerData = {
   title: "Get fresh groceries in minutes",
-  description: "Download the Instacart app for exclusive deals, real-time tracking, and the freshest selection delivered right to your door.",
+  description: "Download the InstantCart app for exclusive deals, real-time tracking, and the freshest selection delivered right to your door.",
 };
 
 export const footerData = {
   brand: {
-    name: "Instacart",
+    name: "InstantCart",
     description: "Bringing fresh, organic groceries straight from local farms to your doorstep. Nourish your home with Earth's finest.",
     socials: [
       { icon: SiFacebook, link: "#" },
@@ -117,6 +118,17 @@ export const statusColors: Record<string, string> = {
 export const iconsForLeafpad = {
   truck: "https://cdn-icons-png.flaticon.com/512/3097/3097180.png",
   destination: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+};
+
+export const heroSectionData = {
+    description: "Fresh, organic groceries delivered from local farms to your doorstep. Quality you can taste, convenience you deserve.",
+    hero_image: logo,
+    hero_features: [
+        { icon: TruckIcon, title: "Free Delivery", desc: "Orders over $20" },
+        { icon: LeafIcon, title: "100% Organic", desc: "Certified products" },
+        { icon: ClockIcon, title: "Same Day", desc: "Express delivery" },
+        { icon: ShieldCheckIcon, title: "Secure Pay", desc: "Safe checkout" },
+    ],
 };
 
 export const dummyProducts = [

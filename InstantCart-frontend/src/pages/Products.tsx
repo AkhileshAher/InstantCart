@@ -57,7 +57,7 @@ function Products() {
         {/* BreadCrumb */}
         <nav className="flex items-center gap-2 text-sm text-app-text-light mb-6">
           <Link to='/' className="hover:text-app-green transition-colors">
-            <Home className="size4" />
+            <Home className="size-4" />
           </Link>
           <span>/</span>
           <span className="text-app-green font-medium">{activeCategory ? activeCategory.name : "All Products"}</span>
