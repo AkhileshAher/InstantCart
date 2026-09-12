@@ -1,0 +1,23 @@
+package in.akhilesh.instantcart.config;
+
+import com.cloudinary.Cloudinary;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class CloudinaryConfig {
+
+    @Bean
+    public Cloudinary getCloudinary() {
+        Map config = new HashMap<>();
+        config.put("cloud_name","dohlwhmao");
+        config.put("api_key","323856646136442");
+        config.put("api_secret","DJ-LRI6rzyaOxymGWAlouPTyDOg");
+        config.put("secret",true);
+        return new Cloudinary(config);
+    }
+
+}

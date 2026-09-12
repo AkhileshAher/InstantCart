@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: InstantCart-backend
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/instantcart
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.springframework.data.mongodb.repository.query: DEBUG
+    org.mongodb.driver.protocol.command: DEBUG
+
+jwt:
+  secret:
+    key: 4z4ut3msw6-abcdefghijklmnopqrstuvwxyz
+
+server:
+  port: 9091
+
+
+debug: true
