@@ -5,8 +5,7 @@ const CheckoutAddress = ({address,setAddress,setStep,selectedAddress}: any) => {
     return (
         <div className="bg-white rounded-2xl p-6 animate-fade-in">
             <h2 className="text-lg font-semibold text-app-green mb-5 flex items-center gap-2">
-                <MapPinIcon className="size-5" />
-                Delivery Address
+                <MapPinIcon className="size-5" />Delivery Address
             </h2>
 
             {address && address.length > 0 && (
