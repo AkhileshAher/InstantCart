@@ -1,5 +1,9 @@
 import { CheckIcon, MapPinIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import type { Address } from "../types"
+import { useState } from "react"
+import Alert from "./Alert"
+import api from "../config/api"
+import toast from "react-hot-toast"
 
 interface AddressCardProps {
     addr: Address,
@@ -8,13 +12,38 @@ interface AddressCardProps {
 }
 
 const AddressCard = ({ addr, onEditHandler, setAddresses }: AddressCardProps) => {
+    const [showAlert, setShowAlert] = useState<boolean>(false);
 
     const handleDelete = async (id: string) => {
-        console.log(id);
+            setShowAlert(true);
     }
 
+      const confirmDelete = async (id: string) => {
+        try {
+            await api.delete(`/address/${id}`);
+            setShowAlert(false);
+            window.location.reload();
+            toast.success("Address deleted !");
+        } catch (error) {
+            toast.error(error.response?.data?.message || error?.message);
+        }
+    };
+
+
     return (
-        <div key={addr._id} className="max-w-3xl bg-white rounded-2xl p-6 flex items-center justify-between">
+        <>
+        {showAlert && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <Alert
+                        message="Do you really want to delete Address? This action cannot be undone."
+                        onConfirm={() => confirmDelete(addr.id)}
+                        onCancel={() => setShowAlert(false)}
+                    />
+                </div>
+            )}
+
+
+        <div key={addr.id} className="max-w-3xl bg-white rounded-2xl p-6 flex items-center justify-between">
             {/* left */}
             <div className="flex gap-4">
                 <div className="size-10 rounded-xl bg-app-cream flex items-center justify-center shrink-0">
@@ -43,13 +72,14 @@ const AddressCard = ({ addr, onEditHandler, setAddresses }: AddressCardProps) =>
                     <PencilIcon className="size-4" />
                 </button>
 
-                <button onClick={() => handleDelete(addr._id)} className="p-2 text-app-text-light hover:text-app-error hover:bg-red-50 rounded-lg transition-colors">
+                <button onClick={() => handleDelete(addr.id)} className="p-2 text-app-text-light hover:text-app-error hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2Icon className="size-4" />
                 </button>
 
             </div>
 
         </div>
+        </>
     )
 }
 

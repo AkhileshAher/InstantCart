@@ -3,6 +3,7 @@ package in.akhilesh.instantcart.security;
 import in.akhilesh.instantcart.utils.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,45 +30,51 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 1. Get Authorization header
-        String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        // 2. No Authorization header
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        // 1. Get JWT from cookie
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+
+            for (Cookie cookie : cookies) {
+
+                if ("access-token".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
         }
 
-        // 3. Extract JWT
-        String token = authHeader.substring(7);
-
-        // 4. Empty token
-        if (token.isBlank()) {
+        // 2. No token found
+        if (token == null || token.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
 
-            // 5. Validate JWT
+            // 3. Validate JWT
             if (!jwtUtil.isTokenValid(token)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // 6. Extract information from JWT
+            // 4. Extract information from JWT
             ObjectId userId = jwtUtil.getUserIdFromToken(token);
             String name = jwtUtil.getNameFromToken(token);
             String email = jwtUtil.getEmailFromToken(token);
             String role = jwtUtil.getRoleFromToken(token);
 
-            // 7. Create custom principal
-            JwtPrincipal principal = new JwtPrincipal(userId, name, email, role);
+            // 5. Create custom principal
+            JwtPrincipal principal =
+                    new JwtPrincipal(userId, name, email, role);
 
-            // 8. Create authority
-            SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+            // 6. Create authority
+            SimpleGrantedAuthority authority =
+                    new SimpleGrantedAuthority("ROLE_" + role);
 
-            // 9. Create Authentication object
+            // 7. Create Authentication
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             principal,
@@ -75,19 +82,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             List.of(authority)
                     );
 
-            // 10. Store Authentication in SecurityContext
+            // 8. Store authentication
             SecurityContextHolder
                     .getContext()
                     .setAuthentication(authentication);
 
         } catch (Exception e) {
 
-            // Invalid/corrupted JWT
-            SecurityContextHolder
-                    .clearContext();
+            SecurityContextHolder.clearContext();
         }
 
-        // 11. Continue request
+        // 9. Continue request
         filterChain.doFilter(request, response);
     }
 }

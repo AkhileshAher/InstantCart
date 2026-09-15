@@ -3,14 +3,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import logo from "../assets/Logo.png";
+import { useAuth } from "../context/AuthContext";
 
 
 function Navbar() {
 
-    const user: any = { name: "John Doe", email: "john@example.com", isAdmin: true }
-
+    const {user,logout} = useAuth();
     const { cartCount, setIsCartOpen } = useCart();
-
     const [searchQuery, setSearchQuery] = useState("");
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const navigate = useNavigate();
@@ -25,13 +24,14 @@ function Navbar() {
 
     const handleLogout = () => {
         setUserMenuOpen(false);
+        logout();
         navigate("/");
     }
 
     return (
         <nav className="bg-white sticky top-0 z-50 border-b border-app-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 gap-4">
-                <Link to={"/"} className="flex items-center gap-2 text-[22px] font-medium shrink-0">
+                <Link to="/" className="flex items-center gap-2 text-[22px] font-medium shrink-0">
                     <img src={logo} alt="InstantCartLogo" className="h-10 w-15" /> <span className="text-green-900 font-bold">InstantCart</span>
                 </Link>
 
@@ -92,12 +92,12 @@ function Navbar() {
                                             {user && <Link to='/addresses'
                                                 className="dropdown-link"><MapPinIcon size={16} />Addresses</Link>}
 
-                                            {!user && <Link to='/products'
+                                            {user && <Link to='/products'
                                                 className="dropdown-link md:hidden"><ArrowUpRightIcon size={16} />Products</Link>}
 
-                                            {!user && <Link to='/deals'
+                                            {user && <Link to='/deals'
                                                 className="dropdown-link md:hidden"><ArrowUpRightIcon size={16} />Deals</Link>}
-                                            {user?.isAdmin && (
+                                            {user?.role == "VENDOR" && (
                                                 <Link to='/admin/products'
                                                     className="dropdown-link"><ShieldIcon size={16} className="text-orange-600" /><span className="text-orange-600">Admin Panel</span></Link>
                                             )}

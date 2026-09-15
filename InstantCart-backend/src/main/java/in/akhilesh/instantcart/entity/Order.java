@@ -3,6 +3,7 @@ package in.akhilesh.instantcart.entity;
 import in.akhilesh.instantcart.dto.order.OrderItem;
 import in.akhilesh.instantcart.dto.order.OrderStatusHistory;
 import in.akhilesh.instantcart.dto.order.ShippingAddress;
+import in.akhilesh.instantcart.dto.user.UserResponse;
 import in.akhilesh.instantcart.entity.enums.OrderStatus;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -26,7 +27,7 @@ public class Order {
 
     private ObjectId userId;
 
-    private User user;
+    private UserResponse user;
 
     private List<OrderItem> items;
 

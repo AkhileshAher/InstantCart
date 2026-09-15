@@ -6,11 +6,20 @@ import in.akhilesh.instantcart.entity.Product;
 import in.akhilesh.instantcart.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Pageable;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -18,6 +27,35 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CloudinaryImageService cloudinary;
+
+
+    public List<ProductResponse> popularProducts(Integer limit) {
+
+        Page<Product> productPage =
+                productRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "rating")));
+
+        List<ProductResponse> products = productPage.getContent()
+                .stream()
+                .map(this::mapProductToResponse)
+                .toList();
+
+        return products;
+    }
+
+
+    public List<ProductResponse> searchProducts(String query) {
+
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        return productRepository.searchProducts(query.trim())
+                .stream()
+                .map(this::mapProductToResponse)
+                .toList();
+    }
+
 
     public List<ProductResponse> getProducts(
             String sort,
@@ -94,6 +132,8 @@ public class ProductService {
         return response;
     }
 
+    @Transactional
+    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public ProductResponse addProduct(ObjectId vendorId, ProductRequest request) {
 
         Product product = mapRequestToProduct(request,vendorId);
@@ -102,7 +142,8 @@ public class ProductService {
         return response;
     }
 
-
+    @Transactional
+    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public ProductResponse updateProduct(ObjectId productId, ObjectId vendorId, ProductRequest request) {
 
         Product product = productRepository.findByIdAndVendorId(productId, vendorId)
@@ -110,18 +151,32 @@ public class ProductService {
                         new AccessDeniedException("You are not allowed to update this product")
                 );
 
-        Product productToUpdate = mapRequestToProduct(request, vendorId);
-        Product updatedProduct = productRepository.save(productToUpdate);
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setOriginalPrice(request.getOriginalPrice());
+        product.setImage(request.getImage());
+        product.setCategory(request.getCategory());
+        product.setUnit(request.getUnit());
+        product.setStock(request.getStock());
+        product.setIsOrganic(request.getIsOrganic());
+
+        Product updatedProduct = productRepository.save(product);
         return mapProductToResponse(updatedProduct);
     }
 
+    @Transactional
+    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public void deleteProduct(ObjectId productId, ObjectId vendorId) {
 
         Product product = productRepository
                 .findByIdAndVendorId(productId, vendorId)
                 .orElseThrow(() -> new AccessDeniedException("You are not allowed to delete this product"));
-
-        productRepository.delete(product);
+        if(product.getStock() == 0) {
+            throw new RuntimeException("Product is Already Out of Stock");
+        }
+        product.setStock(0);
+        productRepository.save(product);
     }
 
     private Product calculateDiscount(Product product) {
@@ -174,7 +229,6 @@ public class ProductService {
         product.setIsOrganic(request.getIsOrganic());
         return product;
     }
-
 
 
 

@@ -9,6 +9,7 @@ import java.util.UUID;
 public class OrderItem {
 
     private String productId;
-
+    private String avatar;
+    private Double price;
     private Integer quantity;
 }

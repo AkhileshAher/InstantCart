@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom"
 import type { Order } from "../types";
-import { dummyDashboardOrdersData } from "../assets/data";
 import Loading from "../components/Loading";
 import { ArrowLeftIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 import OrderOTP from "../components/OrderTracking/OrderOTP";
 import LiveMap from "../components/OrderTracking/LiveMap";
 import OrderTimeLine from "../components/OrderTracking/OrderTimeLine";
+import api from "../config/api";
 
 function OrderTracking() {
 
@@ -20,9 +20,34 @@ function OrderTracking() {
   const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    setOrder(dummyDashboardOrdersData.find((o) => o._id === id) as any);
-    setLoading(false);
+    api.get(`/orders/${id}`)
+    .then((res) => setOrder(res.data))
+    .catch(() => navigate("/orders"))
+    .finally(() => setLoading(false))
+
   }, [id, navigate]);
+
+  useEffect(() => {
+    if(!order || ["Delivered", "Cancelled" , "Placed"].includes(order.status)) return;
+
+    const fetchLocation = async () => {
+      try {
+        const {data} = await api.get(`/orders/${id}/location`);
+        if(data.liveLocation?.lat && data.liveLocation?.lng && data.liveLocation?.updatedAt) {
+          setLiveLocation({
+            lat: data.liveLocation.lat,
+            lng: data.liveLocation.lng
+          });
+        }
+
+      } catch(error) {
+
+      }
+    }
+    fetchLocation();
+    const interval = setInterval(fetchLocation,10000);
+    return () => clearInterval(interval);
+  },[id,order?.status]);
 
   if (loading) return <Loading />
   if (!order) null;
@@ -38,7 +63,7 @@ function OrderTracking() {
         {/* order id, date status */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-app-green">Order #{order!._id.slice(-8).toUpperCase()}</h1>
+            <h1 className="text-2xl font-semibold text-app-green">Order #{order!.id.slice(-8).toUpperCase()}</h1>
             <p className="text-sm text-app-text-light mt-1">Placed on {new Date(order!.createdAt).toLocaleDateString("en-us", { month: "long", day: "numeric", year: "numeric" })}</p>
           </div>
           <span className={`px-4 py-1.5 text-sm font-semibold rounded-full ${order?.status === "Delivered" ? "bg-green-100 text-green-700" : order?.status === "Cancelled" ? "bg-red-100 text-red-700" : "bg-app-orange/10 text-app-orange"}`}>
@@ -101,13 +126,13 @@ function OrderTracking() {
               <div className="space-y-3">
                 {order?.items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="size-10 rounded-lg object-cover" />
+                    <img src={item.avatar} alt={item.name} className="size-10 rounded-lg object-cover" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-app-green truncate">{item.name}</p>
                       <p className="text-xs text-app-text-light">x{item.quantity}</p>
                     </div>
                     <span className="text-sm font-semibold">
-                      {currency}{(item.price * item.quantity).toFixed(2)}
+                      {currency}{item.price * item.quantity}
                     </span>
                   </div>
                 ))}
@@ -117,17 +142,23 @@ function OrderTracking() {
 
                 <div className="flex justify-between">
                   <span className="text-app-text-light">Subtotal</span>
-                  <span>{currency}{order?.subtotal.toFixed(2)}</span>
+                  <span>{currency}{order?.subTotal}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-app-text-light">Delivery</span>
-                  <span>{order?.deliveryFee === 0 ? "Free" : `${currency}${order?.deliveryFee.toFixed(2)}`}{currency}{order?.subtotal.toFixed(2)}</span>
+                  <span>{order?.deliveryFee === 0 ? "Free " : `${currency}${order?.deliveryFee}`}</span>
+                </div>
+
+
+                <div className="flex justify-between">
+                  <span className="text-app-text-light">Tax</span>
+                  <span>{`${currency}${order?.subTotal * 0.05}`}</span>
                 </div>
 
                 <div className="flex justify-between pt-2 border-t border-app-border font-semibold text-app-green">
                   <span>Total</span>
-                  <span>{currency}{order?.total.toFixed(2)}</span>
+                  <span>{currency}{order?.total}</span>
                 </div>
 
               </div>

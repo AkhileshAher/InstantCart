@@ -1,12 +1,15 @@
 package in.akhilesh.instantcart.controller;
 
 import in.akhilesh.instantcart.dto.delivery.DeliveryPartnerResponse;
+import in.akhilesh.instantcart.dto.order.OrderResponse;
 import in.akhilesh.instantcart.entity.DeliveryPartner;
+import in.akhilesh.instantcart.entity.LiveLocation;
 import in.akhilesh.instantcart.entity.Order;
 import in.akhilesh.instantcart.entity.enums.OrderStatus;
 import in.akhilesh.instantcart.security.JwtPrincipal;
 import in.akhilesh.instantcart.service.DeliveryPartnerService;
 import in.akhilesh.instantcart.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -14,8 +17,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/delivery-partners")
+    @RequestMapping("/api/delivery-partners")
 @RequiredArgsConstructor
 public class DeliveryPartnerController {
 
@@ -28,9 +33,16 @@ public class DeliveryPartnerController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/my-orders")
+    public ResponseEntity<List<OrderResponse>> getMyOrdersToDeliver(Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        ObjectId userId = principal.getUserId();
+        List<OrderResponse> ordersList = orderService.getOrdersOfDeliveryPartner(userId);
+        return ResponseEntity.ok(ordersList);
+    }
+
     @PostMapping
-//    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPartnerResponse> createDeliveryPartner(@RequestBody DeliveryPartner deliveryPartner) {
+    public ResponseEntity<DeliveryPartnerResponse> createDeliveryPartner(@RequestBody @Valid DeliveryPartner deliveryPartner) {
 
         DeliveryPartnerResponse response = deliveryPartnerService.createDeliveryPartner(deliveryPartner);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -38,7 +50,6 @@ public class DeliveryPartnerController {
 
     // SET PARTNER STATUS
     @PatchMapping("/{partnerId}/status")
-//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPartnerResponse> updateStatus(
             @PathVariable ObjectId partnerId,
             @RequestParam Boolean active
@@ -48,16 +59,11 @@ public class DeliveryPartnerController {
     }
 
     @PutMapping("/{orderId}/deliver")
-//    @PreAuthorize("hasRole('DELIVERY_PARTNER')")
-    public ResponseEntity<Order> markAsDelivered(
-            @PathVariable ObjectId orderId,
-            @RequestParam String otp,
-            Authentication authentication
+    public ResponseEntity<Order> markAsDelivered(@PathVariable ObjectId orderId, @RequestParam String otp, Authentication authentication
     ) {
 
-//        JwtPrincipal partner = (JwtPrincipal) authentication.getPrincipal();
-//        ObjectId deliveryPartnerId = partner.getUserId();
-        ObjectId deliveryPartnerId = new ObjectId("6aa576f51658fbe8ead0819e");
+        JwtPrincipal partner = (JwtPrincipal) authentication.getPrincipal();
+        ObjectId deliveryPartnerId = partner.getUserId();
         Order order = orderService.markOrderAsDelivered(
                 orderId,
                 otp,
@@ -77,5 +83,14 @@ public class DeliveryPartnerController {
     public ResponseEntity<Order> changeOrderStatus(@PathVariable ObjectId orderId, @RequestParam OrderStatus status) {
         return orderService.changeStatus(orderId,status);
     }
+
+    @PutMapping("/location/{orderId}")
+    public ResponseEntity<LiveLocation> getLocation(@RequestBody LiveLocation location,@RequestParam ObjectId orderId,Authentication authentication) {
+        JwtPrincipal partner = (JwtPrincipal) authentication.getPrincipal();
+        ObjectId deliveryPartnerId = partner.getUserId();
+        LiveLocation liveLocation = orderService.updateLocation(location, orderId, deliveryPartnerId);
+        return ResponseEntity.ok(liveLocation);
+    }
+
 
 }

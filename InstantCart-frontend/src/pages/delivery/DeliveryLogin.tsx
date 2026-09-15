@@ -1,15 +1,27 @@
 import { useState } from "react";
 import logo from "../../assets/Logo.png";
 import { heroSectionData } from "../../assets/data";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 export default function DeliveryLogin() {
+
+      const { user,deliveryLogin } = useAuth();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
-
+        setLoading(true);
+        try {
+            await deliveryLogin(email,password);
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Login Failed" );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -41,7 +53,7 @@ export default function DeliveryLogin() {
                             <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border not-focus:border-app-border text-sm transition-colors" placeholder="••••••••" />
                         </div>
                         <button type="submit" disabled={loading} className="w-full py-3 bg-app-green text-white font-semibold rounded-xl hover:bg-app-green-light transition-colors disabled:opacity-60">
-                            {loading ? "Signing in..." : "Sign In"}
+                            {loading ? "Loging in..." : "Log In"}
                         </button>
                     </form>
                 </div>

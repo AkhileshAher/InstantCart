@@ -4,6 +4,7 @@ import in.akhilesh.instantcart.dto.product.ProductRequest;
 import in.akhilesh.instantcart.dto.product.ProductResponse;
 import in.akhilesh.instantcart.security.JwtPrincipal;
 import in.akhilesh.instantcart.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,6 +22,18 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<ProductResponse>> popularProducts(@RequestParam Integer limit) {
+        List<ProductResponse> productResponses = productService.popularProducts(limit);
+        return ResponseEntity.ok(productResponses);
+    }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String q) {
+        return ResponseEntity.ok(productService.searchProducts(q));
+    }
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getProducts(
@@ -53,11 +67,11 @@ public class ProductController {
     }
 
     @PostMapping
-//    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<ProductResponse> addProduct(
             Authentication authentication,
-            @RequestBody ProductRequest request
-    ) {
+            @RequestBody @Valid ProductRequest request,
+            @RequestParam(value = "image",required = false)MultipartFile file
+            ) {
 
         JwtPrincipal principal =
                 (JwtPrincipal) authentication.getPrincipal();
@@ -71,7 +85,6 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}")
-//    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable ObjectId productId,
             Authentication authentication,
@@ -87,7 +100,6 @@ public class ProductController {
     }
 
     @DeleteMapping("/{productId}")
-//    @PreAuthorize("hasRole('VENDOR')")
     public ResponseEntity<Void> deleteProduct(
             @PathVariable ObjectId productId,
             Authentication authentication

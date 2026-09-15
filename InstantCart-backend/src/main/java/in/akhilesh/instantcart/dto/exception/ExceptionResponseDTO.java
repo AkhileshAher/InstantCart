@@ -17,6 +17,6 @@ public class ExceptionResponseDTO {
     private HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     private String error = HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase();
     private String path = "";
-    private LocalDateTime timestamp;
+    private LocalDateTime timestamp = LocalDateTime.now();
 
 }

@@ -6,7 +6,9 @@ import in.akhilesh.instantcart.entity.Address;
 import in.akhilesh.instantcart.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +19,7 @@ public class AddressService {
 
     private final AddressRepository addressRepository;
 
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public List<AddressResponse> fetchAddress(ObjectId userId) {
 
         return addressRepository.findByUserId(userId)
@@ -25,6 +28,8 @@ public class AddressService {
                 .toList();
     }
 
+    @Transactional
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse createAddress(ObjectId userId, AddressRequest request) {
 
         Address address = mapRequestToAddress(userId,request);
@@ -34,7 +39,8 @@ public class AddressService {
     }
 
 
-
+    @Transactional
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse updateAddress(ObjectId addressId, ObjectId userId, AddressRequest request) {
 
         Address address = addressRepository.findByIdAndUserId(addressId, userId)
@@ -52,6 +58,8 @@ public class AddressService {
         return mapToResponse(addressRepository.save(address));
     }
 
+    @Transactional
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public void deleteAddress(ObjectId addressId, ObjectId userId) {
 
         Address address = addressRepository.findByIdAndUserId(addressId, userId)

@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class AdminOrderResponse {
-    private ObjectId orderId;
+    private String orderId;
 
     private String customerName;
 

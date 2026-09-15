@@ -1,22 +1,29 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { LogOutIcon, TruckIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { DeliveryPartner } from "../../types";
-import { dummyDeliveryPartnerData } from "../../assets/data";
+import { useAuth } from "../../context/AuthContext";
+import Loading from "../../components/Loading";
 
 export default function DeliveryLayout() {
-    const navigate = useNavigate();
-    const [partner, setPartner] = useState<DeliveryPartner | null>(null);
 
-    useEffect(() => {
-        setPartner(dummyDeliveryPartnerData[0] as DeliveryPartner);
-    }, [navigate]);
+    const {user,loading,logout} = useAuth();
+    const navigate = useNavigate();
+
+      if(loading) {
+        return <Loading />;
+    }
+
+     if (!user) {
+        return <Navigate to="/delivery/login" replace />;
+    }
+
+     if (user.role !== "DELIVERY") {
+        return <Navigate to="/" replace />;
+    }
 
     const handleLogout = () => {
-        navigate("/delivery/login");
+        logout("/delivery/login");
     };
 
-    if (!partner) return null;
 
     return (
         <div className="min-h-screen bg-app-cream">
@@ -28,7 +35,7 @@ export default function DeliveryLayout() {
                         <span className="text-lg font-semibold text-app-green">InstantCart Delivery</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-zinc-600">{partner.name}</span>
+                        <span className="text-sm font-medium text-zinc-600">{user.name}</span>
                         <button onClick={handleLogout} className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <LogOutIcon className="size-4" />
                         </button>

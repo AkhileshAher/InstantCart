@@ -21,6 +21,8 @@ import AdminDeliveryPartners from "./pages/admin/AdminDeliveryPartners";
 import DeliveryLogin from "./pages/delivery/DeliveryLogin";
 import DeliveryLayout from "./pages/delivery/DeliveryLayout";
 import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
+import Register from "./pages/Register";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   return (
@@ -34,7 +36,7 @@ const App = () => {
       <Routes>
         {/* Auth Pages - No Navbar/Footer */}
         <Route path="/login" element={<Login />} />
-        {/* <Route path="/register" element={<Register />} /> */}
+        <Route path="/register" element={<Register />} />
         {/* Main Pages - with Navbar/Footer */}
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
@@ -57,14 +59,19 @@ const App = () => {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="delivery-partners" element={<AdminDeliveryPartners />} />
           </Route>
-
-          {/* Delivery Partner Pages */}
-          <Route path="delivery/login" element={<DeliveryLogin />} />
-          <Route path="delivery" element={<DeliveryLayout />}>
-            <Route index element={<DeliveryDashboard />} />
           </Route>
 
-        </Route>
+          {/* Delivery Partner Pages */}
+          <Route>
+          <Route path="/delivery/login" element={<DeliveryLogin />} />
+          <Route path="/delivery" element={<DeliveryLayout />}>
+            <Route index element={<DeliveryDashboard />} />
+          </Route>
+          <Route path="*" element={<NotFound homePath="/delivery" />}/>
+          </Route>
+
+          <Route path="*" element={<NotFound homePath="/" />} />
+
 
       </Routes>
 

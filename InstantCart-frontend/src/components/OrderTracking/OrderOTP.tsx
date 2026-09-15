@@ -1,8 +1,12 @@
-import { KeyRoundIcon } from 'lucide-react'
+import { KeyRoundIcon } from "lucide-react"
 
 export default function OrderOTP({ order }: { order: any }) {
-    const showOtp = order.deliveryOtp && ["Assigned", "Packed", "Out for Delivery"].includes(order.status);
+
+    const showOtp = order.deliveryOtp &&
+        ["ASSIGNED", "OUT_FOR_DELIVERY"].includes(order.status);
+
     if (!showOtp) return null;
+
     return (
         <div className="bg-linear-to-r from-app-green to-app-green-light rounded-2xl p-6 text-white">
             <div className="flex items-center gap-3 mb-3">
@@ -14,9 +18,13 @@ export default function OrderOTP({ order }: { order: any }) {
                     <p className="text-xs text-white/70">Share this with your delivery partner</p>
                 </div>
             </div>
+
             <div className="flex gap-2 mt-2">
                 {order.deliveryOtp.split("").map((digit: string, i: number) => (
-                    <div key={i} className="w-11 h-13 rounded-xl bg-white/15 flex-center text-2xl font-mono font-bold tracking-wider">
+                    <div
+                        key={i}
+                        className="w-11 h-13 rounded-xl bg-white/15 flex-center text-2xl font-mono font-bold tracking-wider"
+                    >
                         {digit}
                     </div>
                 ))}
@@ -24,3 +32,4 @@ export default function OrderOTP({ order }: { order: any }) {
         </div>
     )
 }
+

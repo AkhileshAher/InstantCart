@@ -4,6 +4,7 @@ import in.akhilesh.instantcart.dto.exception.ExceptionResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -30,7 +31,6 @@ public class GlobalExceptionHandler {
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR)
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
                 .build();
-        e.printStackTrace();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
     }
 

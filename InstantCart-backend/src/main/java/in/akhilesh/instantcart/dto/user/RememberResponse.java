@@ -4,12 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.bson.types.ObjectId;
 
-
 @Data
 @AllArgsConstructor
-public class AuthResponse {
-    private ObjectId userId;
-    private String username;
+public class RememberResponse {
+    private String userId;
+    private String name;
     private String email;
-    private String accessToken;
+    private String role;
 }

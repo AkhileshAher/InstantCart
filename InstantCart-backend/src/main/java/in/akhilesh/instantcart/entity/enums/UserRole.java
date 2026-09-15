@@ -1,10 +1,9 @@
 package in.akhilesh.instantcart.entity.enums;
 
-import javax.management.relation.Role;
 import java.util.Set;
 
 public enum UserRole {
-    USER(Set.of(Permission.READ)),
+    CUSTOMER(Set.of(Permission.READ,Permission.WRITE,Permission.UPDATE,Permission.DELETE)),
     VENDOR(Set.of(Permission.READ,Permission.WRITE,Permission.DELETE)),
     DELIVERY(Set.of(Permission.READ));
 

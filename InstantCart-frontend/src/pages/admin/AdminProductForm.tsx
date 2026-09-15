@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon } from "lucide-react";
-import { categoriesData, dummyProducts } from "../../assets/data";
+import { categoriesData } from "../../assets/data";
 import Loading from "../../components/Loading";
+import api from "../../config/api";
+import toast from "react-hot-toast";
 
 export default function AdminProductForm() {
     const { id } = useParams();
     const isEdit = Boolean(id);
+    const navigate = useNavigate();
 
     const [loading, setLoading] = useState(isEdit);
     const [saving, setSaving] = useState(false);
@@ -24,19 +27,90 @@ export default function AdminProductForm() {
         isOrganic: false,
     });
 
-    useEffect(() => {
-        const fetchData = async () => {
+useEffect(() => {
+    const fetchData = async () => {
+        try {
             if (isEdit) {
-                setFormData(() => dummyProducts.find((p) => p._id === id) as any)
+                const { data: prodData } = await api.get(`/products/${id}`);
+                const p = prodData;
+
+                setFormData({
+                    name: p.name,
+                    description: p.description,
+                    price: p.price.toString(),
+                    originalPrice: p.originalPrice
+                        ? p.originalPrice.toString()
+                        : "",
+                    image: p.image,
+                    category: p.category,
+                    unit: p.unit,
+                    stock: p.stock.toString(),
+                    isOrganic: p.isOrganic,
+                });
             }
-            setLoading(false)
-        };
-        fetchData();
-    }, [id, isEdit]);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to save product");
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchData(); 
+}, [id, isEdit]);
 
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
+        setSaving(true);
+        try {
+            let finalImageUrl = formData.image;
 
+            if(imageFile) {
+                const allowedTypes = ["image/jpeg","image/png","image/webp"];
+
+                if (!allowedTypes.includes(imageFile.type)) {
+                    toast.error("Only JPG, PNG and WebP images are allowed");
+                    return;
+                }
+
+                if (imageFile.size > 2 * 1024 * 1024) {
+                    toast.error("Image size must be less than 2 MB");
+                    return;
+                }
+
+
+                const formDataUpload = new FormData();
+                formDataUpload.append("image", imageFile);
+                const { data } = await api.post("/cloudinary/upload",formDataUpload);
+                finalImageUrl = data.url;
+
+            }
+
+            if(!finalImageUrl) {
+                toast.error("Please upload a Product Image");
+                setSaving(false);
+                return;
+            }
+
+            const payload = {
+                ...formData, 
+                image: finalImageUrl,
+                price : Number(formData.price),
+                originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0,
+                stock : Number(formData.stock),
+            }
+
+            if(isEdit) {
+                await api.put(`/products/${id}`,payload);
+                toast.success("Product updated succesfully");
+            } else {
+                await api.post(`/products`,payload);
+                toast.success("Product created Successfully")
+            }
+            navigate("/admin/products")
+        } catch (error : any) {
+            toast.error(error.response?.data?.message || "Failed to save product");
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (

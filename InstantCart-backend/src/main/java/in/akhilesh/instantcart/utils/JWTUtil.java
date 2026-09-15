@@ -1,5 +1,6 @@
 package in.akhilesh.instantcart.utils;
 
+import in.akhilesh.instantcart.dto.TokenRequest;
 import in.akhilesh.instantcart.dto.user.AuthRequest;
 import in.akhilesh.instantcart.entity.User;
 import io.jsonwebtoken.Claims;
@@ -40,7 +41,7 @@ public class JWTUtil {
                 .getPayload();
     }
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(TokenRequest user) {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId().toString())

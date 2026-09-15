@@ -1,20 +1,18 @@
-package in.akhilesh.instantcart.dto.delivery;
+package in.akhilesh.instantcart.dto.user;
 
+import in.akhilesh.instantcart.entity.enums.UserRole;
 import lombok.Data;
 import org.bson.types.ObjectId;
-
 import java.time.LocalDateTime;
 
 @Data
-public class DeliveryPartnerResponse {
-    private String id;
+public class UserResponse {
+    private ObjectId id;
     private String name;
     private String email;
-    private String phone;
+    private UserRole role;
+    private String phone = "";
     private String avatar = "";
-    private String vehicleType = "bike";
-    private Boolean isActive = true;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
 }

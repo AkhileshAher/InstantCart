@@ -1,17 +1,23 @@
+export type UserRole = "CUSTOMER" | "VENDOR" | "DELIVERY";
+
 export interface User {
-    _id: string;
+    id: string;
     name: string;
     email: string;
     phone: string;
     avatar: string;
-    addresses: Address[];
-    isAdmin?: boolean;
+    role: UserRole;
+
+    vehicleType?: "bike" | "scooter" | "car";
+    isActive?: boolean;
+
+    addresses?: Address[];
     createdAt: string;
     updatedAt: string;
 }
 
 export interface Address {
-    _id: string;
+    id: string;
     label: string;
     address: string;
     city: string;
@@ -29,7 +35,7 @@ export interface Category {
 }
 
 export interface Product {
-    _id: string;
+    id: string;
     name: string;
     description: string;
     price: number;
@@ -53,16 +59,17 @@ export interface CartItem {
 export interface OrderItem {
     product: string;
     name: string;
-    image: string;
+    avatar: string;
     price: number;
     quantity: number;
     unit: string;
 }
 
 export interface DeliveryPartner {
-    _id: string;
+    id: string;
     name: string;
     email: string;
+    role: string;
     phone: string;
     avatar: string;
     vehicleType: "bike" | "scooter" | "car";
@@ -71,17 +78,29 @@ export interface DeliveryPartner {
 }
 
 export interface Order {
-    _id: string;
-    user: string | { _id: string; name: string; email: string; phone?: string };
+    id: string;
+    user:
+        | string
+        | {
+              id: string;
+              name: string;
+              email: string;
+              phone?: string;
+          };
+
     items: OrderItem[];
-    shippingAddress: Omit<Address, "_id" | "isDefault">;
+    shippingAddress: Omit<Address,"id" | "isDefault">;
     paymentMethod: string;
-    subtotal: number;
+    subTotal: number;
     deliveryFee: number;
     tax: number;
     total: number;
     status: string;
-    statusHistory: { status: string; timestamp: string; note: string }[];
+    statusHistory: {
+        status: string;
+        timestamp: string;
+        note: string;
+    }[];
     deliveryPartner: DeliveryPartner | null;
     deliveryOtp: string;
     isPaid: boolean;

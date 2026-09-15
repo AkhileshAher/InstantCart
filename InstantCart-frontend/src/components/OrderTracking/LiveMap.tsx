@@ -1,71 +1,130 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { MapPinIcon } from "lucide-react";
-import { iconsForLeafpad } from "../../assets/data";
-import L from "leaflet";
 import { useEffect } from "react";
+import L from "leaflet";
+import {
+    MapContainer,
+    Marker,
+    Popup,
+    TileLayer,
+    useMap
+} from "react-leaflet";
+
 import "leaflet/dist/leaflet.css";
 
-export default function LiveMap({ order, liveLocation }: { order: any, liveLocation: any }) {
+export default function LiveMap({
+    order,
+    liveLocation
+}: {
+    order: any;
+    liveLocation: any;
+}) {
 
-    // Custom delivery truck icon
     const truckIcon = new L.Icon({
-        iconUrl: iconsForLeafpad.truck,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-        popupAnchor: [0, -36],
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/3097/3097144.png",
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
     });
 
-    // Destination pin icon
     const destinationIcon = new L.Icon({
-        iconUrl: iconsForLeafpad.destination,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+        iconSize: [35, 35],
+        iconAnchor: [17, 35]
     });
 
-    // Component to re-center map when location changes
-    function MapUpdater({ center }: { center: [number, number] }) {
+    function MapUpdater({
+        center
+    }: {
+        center: [number, number]
+    }) {
         const map = useMap();
+
         useEffect(() => {
             map.setView(center, map.getZoom());
         }, [center, map]);
+
         return null;
     }
 
+    if (
+        order.status === "DELIVERED" ||
+        order.status === "CANCELLED"
+    ) {
+        return null;
+    }
+
+    const destination =
+        order.shippingAddress?.lat != null &&
+        order.shippingAddress?.lng != null
+            ? [
+                order.shippingAddress.lat,
+                order.shippingAddress.lng
+            ] as [number, number]
+            : null;
+
+    const location =
+        liveLocation?.lat != null &&
+        liveLocation?.lng != null
+            ? [
+                liveLocation.lat,
+                liveLocation.lng
+            ] as [number, number]
+            : null;
+
+    const center = location || destination;
+
+    if (!center) {
+        return (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <p className="text-gray-500">
+                    Delivery location is not available yet.
+                </p>
+            </div>
+        );
+    }
+
     return (
-        <>
-            {order.status !== "Delivered" && order.status !== "Cancelled" && (
-                <div className="rounded-2xl overflow-hidden border border-app-border" style={{ height: 280 }}>
-                    {liveLocation && liveLocation.lat !== 0 ? (
-                        <MapContainer center={[liveLocation.lat, liveLocation.lng]} zoom={15} style={{ height: "100%", width: "100%" }} zoomControl={false}>
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Marker position={[liveLocation.lat, liveLocation.lng]} icon={truckIcon}>
-                                <Popup>Delivery Partner</Popup>
-                            </Marker>
-                            {order.shippingAddress.lat && order.shippingAddress.lng && (
-                                <Marker position={[order.shippingAddress.lat, order.shippingAddress.lng]} icon={destinationIcon}>
-                                    <Popup>Delivery Address</Popup>
-                                </Marker>
-                            )}
-                            <MapUpdater center={[liveLocation.lat, liveLocation.lng]} />
-                        </MapContainer>
-                    ) : order.shippingAddress.lat && order.shippingAddress.lng ? (
-                        <MapContainer center={[order.shippingAddress.lat, order.shippingAddress.lng]} zoom={15} style={{ height: "100%", width: "100%" }} zoomControl={false}>
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Marker position={[order.shippingAddress.lat, order.shippingAddress.lng]} icon={destinationIcon}>
-                                <Popup>Delivery Address</Popup>
-                            </Marker>
-                        </MapContainer>
-                    ) : (
-                        <div className="h-full bg-app-green/5 flex-center">
-                            <div className="text-center">
-                                <MapPinIcon className="size-8 text-app-green/40 mx-auto mb-2" />
-                                <p className="text-sm text-app-green/50 font-medium">Waiting for delivery partner location...</p>
-                            </div>
-                        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">
+                Live Delivery Location
+            </h2>
+
+            <div className="h-[400px] rounded-xl overflow-hidden">
+                <MapContainer
+                    center={center}
+                    zoom={15}
+                    scrollWheelZoom={false}
+                    className="h-full w-full"
+                >
+                    <TileLayer
+                        attribution='&copy; OpenStreetMap contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+
+                    <MapUpdater center={center} />
+
+                    {location && (
+                        <Marker
+                            position={location}
+                            icon={truckIcon}
+                        >
+                            <Popup>
+                                Delivery partner location
+                            </Popup>
+                        </Marker>
                     )}
-                </div>
-            )}
-        </>
-    )
+
+                    {destination && (
+                        <Marker
+                            position={destination}
+                            icon={destinationIcon}
+                        >
+                            <Popup>
+                                Delivery destination
+                            </Popup>
+                        </Marker>
+                    )}
+                </MapContainer>
+            </div>
+        </div>
+    );
 }
+

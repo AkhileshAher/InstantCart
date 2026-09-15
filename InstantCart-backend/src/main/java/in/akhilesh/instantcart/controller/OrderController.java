@@ -7,6 +7,7 @@ import in.akhilesh.instantcart.entity.Order;
 import in.akhilesh.instantcart.entity.enums.OrderStatus;
 import in.akhilesh.instantcart.security.JwtPrincipal;
 import in.akhilesh.instantcart.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -53,7 +54,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             Authentication authentication,
-            @RequestBody CreateOrderRequest request
+            @RequestBody @Valid CreateOrderRequest request
     ) {
 
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();

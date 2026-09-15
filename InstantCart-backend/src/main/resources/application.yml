@@ -4,20 +4,43 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/instantcart
+      uri: ${DB_URL}
 
-logging:
-  level:
-    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
-    org.springframework.data.mongodb.repository.query: DEBUG
-    org.mongodb.driver.protocol.command: DEBUG
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${COMPANY_EMAIL}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+#logging:
+#  level:
+#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+#    org.springframework.data.mongodb.repository.query: DEBUG
+#    org.mongodb.driver.protocol.command: DEBUG
 
 jwt:
   secret:
-    key: 4z4ut3msw6-abcdefghijklmnopqrstuvwxyz
+    key: ${JWT_SECRET}
 
 server:
   port: 9091
 
 
-debug: true
+cloudinary:
+  cloud:
+    name: ${CLOUD_NAME}
+    key: ${CLOUD_KEY}
+    secret: ${CLOUD_SECRET}
+
+
+#debug: true

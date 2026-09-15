@@ -1,5 +1,7 @@
 package in.akhilesh.instantcart.dto.order;
 
+import in.akhilesh.instantcart.dto.delivery.DeliveryPartnerResponse;
+import in.akhilesh.instantcart.dto.user.UserResponse;
 import in.akhilesh.instantcart.entity.DeliveryPartner;
 import in.akhilesh.instantcart.entity.LiveLocation;
 import in.akhilesh.instantcart.entity.User;
@@ -17,7 +19,7 @@ import java.util.List;
 public class OrderResponse {
     private String id;
     private String userId;
-    private User user;
+    private UserResponse user;
     private List<OrderItem> items;
     private ShippingAddress shippingAddress;
     private String paymentMethod = "card";
@@ -28,7 +30,7 @@ public class OrderResponse {
     private OrderStatus status = OrderStatus.PLACED;
     private List<OrderStatusHistory> statusHistory;
     private String deliveryPartnerId;
-    private DeliveryPartner deliveryPartner;
+    private DeliveryPartnerResponse deliveryPartner;
     private String deliveryOtp = "";
     private LiveLocation liveLocation;
     private Boolean isPaid = false;

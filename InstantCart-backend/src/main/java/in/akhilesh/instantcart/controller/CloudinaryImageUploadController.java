@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/cloudinary/upload")
+@RequestMapping("/api/cloudinary/upload")
 @RequiredArgsConstructor
 public class CloudinaryImageUploadController {
 

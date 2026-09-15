@@ -1,7 +1,10 @@
 package in.akhilesh.instantcart.service;
 
+import in.akhilesh.instantcart.dto.OrderEmailData;
 import in.akhilesh.instantcart.dto.admin.AdminOrderResponse;
+import in.akhilesh.instantcart.dto.delivery.DeliveryPartnerResponse;
 import in.akhilesh.instantcart.dto.order.*;
+import in.akhilesh.instantcart.dto.user.UserResponse;
 import in.akhilesh.instantcart.entity.*;
 import in.akhilesh.instantcart.entity.enums.OrderStatus;
 import in.akhilesh.instantcart.repository.DeliveryPartnerRepository;
@@ -13,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,9 +32,11 @@ public class OrderService {
     private final UserRepository userRepo;
     private final ProductRepository productRepo;
     private final DeliveryPartnerRepository deliveryPartnerRepository;
+    private final EmailService emailService;
 
 
     @Transactional
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public OrderResponse createOrder(ObjectId userId, CreateOrderRequest request) {
 
         if (request.getItems() == null || request.getItems().isEmpty()) {
@@ -46,6 +52,7 @@ public class OrderService {
 
         Order order = new Order();
         order.setUserId(user.getId());
+        order.setUser(mapUserToResponse(user));
 
         // ITEMS
 
@@ -65,11 +72,15 @@ public class OrderService {
             }
             Product product = productRepo.findById(productId)
                             .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
+
             if (product.getStock() < requestedQuantity) {
                 throw new RuntimeException("Not enough stock for product: " + product.getName());
             }
+
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(productId.toHexString());
+            orderItem.setAvatar(product.getImage());
+            orderItem.setPrice(product.getPrice());
             orderItem.setQuantity(requestedQuantity);
             orderItems.add(orderItem);
 
@@ -95,10 +106,10 @@ public class OrderService {
         order.setShippingAddress(address);
 
         // Live Temp Location
-        LiveLocation location = new LiveLocation();
-        location.setLng(addressRequest.getLng());
-        location.setLat(addressRequest.getLat());
-        order.setLiveLocation(location);
+//        LiveLocation location = new LiveLocation();
+//        location.setLng(addressRequest.getLng());
+//        location.setLat(addressRequest.getLat());
+//        order.setLiveLocation(location);
 
         // PAYMENT
         String paymentMethod = request.getPaymentMethod();
@@ -133,7 +144,7 @@ public class OrderService {
         return mapOrderToResponse(saved,userId);
     }
 
-
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public List<OrderResponse> getUserOrders(ObjectId userId, OrderStatus status) {
 
         if (status == null) {
@@ -148,6 +159,7 @@ public class OrderService {
     }
 
 
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public OrderResponse getOrder(ObjectId orderId, ObjectId userId) {
 
         Order order = orderRepo.findByIdAndUserId(orderId,userId)
@@ -162,8 +174,14 @@ public class OrderService {
         return response;
     }
 
+    @PreAuthorize(value = "hasRole('DELIVERY') and #userId == authentication.principal.userId ")
+    public List<OrderResponse> getOrdersOfDeliveryPartner(ObjectId userId) {
+        return orderRepo.findByDeliveryPartnerId(userId).stream()
+                .map(order -> mapOrderToResponse(order,order.getUserId()))
+                .toList();
+    }
 
-
+    @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public LiveLocation getOrderLocation(ObjectId orderId, ObjectId userId) {
 
         Order order = orderRepo.findById(orderId)
@@ -175,9 +193,36 @@ public class OrderService {
 
         return order.getLiveLocation();
     }
+    
+    @Transactional
+    @PreAuthorize(value = "hasRole('VENDOR')")
+    public OrderResponse changeOrderStatus(ObjectId orderId, OrderStatus status) {
+
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order does not exist with this id : " + orderId));
+
+        if(status == OrderStatus.ASSIGNED) {
+            throw new RuntimeException("Assign Order to Delivery Partner");
+        }
+
+        if(status == OrderStatus.OUT_FOR_DELIVERY || status == OrderStatus.DELIVERED || status == OrderStatus.CANCELLED) {
+            throw new RuntimeException("Do Not have rights");
+        }
+
+        OrderStatus currentStatus = order.getStatus();
+
+        if(!currentStatus.canTransitionTo(status)) {
+            throw new RuntimeException("Invalid status change: " + currentStatus + " → " + status);
+        }
+
+        updateOrderStatus(order,status);
+        orderRepo.save(order);
+        return mapOrderToResponse(order,order.getUserId());
+    }
 
 
     @Transactional
+    @PreAuthorize(value = "hasRole('VENDOR') or hasRole('DELIVERY')")
     private void updateOrderStatus(Order order, OrderStatus status) {
 
         order.setStatus(status);
@@ -198,6 +243,7 @@ public class OrderService {
 
 
     @Transactional
+    @PreAuthorize("hasRole('DELIVERY') and #deliveryPartnerId == authentication.principal.userId")
     public Order markOrderAsDelivered(ObjectId orderId, String otp, ObjectId deliveryPartnerId) {
 
         Order order = orderRepo.findById(orderId)
@@ -228,36 +274,35 @@ public class OrderService {
         return saved;
     }
 
+    @PreAuthorize(value = "hasRole('VENDOR')")
     public List<AdminOrderResponse> getAllOrders() {
 
         List<Order> orders = orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        return orders.stream()
-                .map(order -> {
-                    String customerName = order.getUser().getName();
-                    String deliveryPartnerName = null;
-                    ObjectId deliveryPartnerId = null;
+        return orders.stream().map(order -> {
+                    User customer = userRepo.findById(order.getUserId()).orElse(null);
+                    User deliveryPartner = null;
                     if (order.getDeliveryPartnerId() != null) {
-                        deliveryPartnerId = order.getDeliveryPartner().getId();
-                        deliveryPartnerName = order.getDeliveryPartner().getName();
+                        deliveryPartner = userRepo.findById(order.getDeliveryPartnerId()).orElse(null);
                     }
 
                     return new AdminOrderResponse(
-                            order.getId(),
-                            customerName,
+                            order.getId().toHexString(),
+                            customer != null ? customer.getName() : null,
                             order.getTotal(),
                             order.getStatus(),
-                            deliveryPartnerId,
-                            deliveryPartnerName,
+                            deliveryPartner != null ? deliveryPartner.getId() : null,
+                            deliveryPartner != null ? deliveryPartner.getName() : null,
                             order.getCreatedAt()
                     );
-                })
-                .toList();
+                }).toList();
     }
 
     @Transactional
+    @PreAuthorize(value = "hasRole('VENDOR')")
     public Order assignDeliveryPartner(ObjectId orderId, ObjectId deliveryPartnerId) {
-
+        System.out.println(orderId);
+        System.out.println(deliveryPartnerId);;
         Order order = orderRepo.findById(orderId)
                         .orElseThrow(() -> new RuntimeException("Order does not exist with this ID"));
 
@@ -276,13 +321,29 @@ public class OrderService {
         order.setDeliveryPartnerId(deliveryPartner.getId());
 
         Integer otp = OtpGenerator.getOtp();
-        // TODO SEND OTP TO USER
         order.setDeliveryOtp(otp.toString());
+
+        OrderEmailData emailData = OrderEmailData.builder()
+                .otp(otp.toString())
+                .orderId(order.getId().toString())
+                .orderDate(order.getCreatedAt().toString())
+                .orderStatus(order.getStatus().toString())
+                .subtotal(order.getSubTotal())
+                .deliveryFee(order.getDeliveryFee())
+                .totalAmount(order.getTotal())
+                .deliveryAddress(order.getShippingAddress().getAddress())
+                .build();
+        User user = userRepo.findById(order.getUserId()).orElse(null);
+        // EXTERNALIZE MAIL SYSTEM
+        if(user != null)
+            emailService.sendMail(user.getEmail(), "YOUR Order Status",emailData);
 
         Order saved = orderRepo.save(order);
         return saved;
     }
 
+    @Transactional
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public void deleteOrder(ObjectId userId,ObjectId orderId) {
         Order order = orderRepo.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new RuntimeException("Order does not exist with id : " + orderId));
@@ -304,7 +365,20 @@ public class OrderService {
         response.setStatus(order.getStatus());
         response.setStatusHistory(order.getStatusHistory());
         response.setDeliveryPartnerId(order.getDeliveryPartnerId() != null ? order.getDeliveryPartnerId().toHexString() : "" );
-        response.setDeliveryPartner(order.getDeliveryPartner() != null ? order.getDeliveryPartner() : null );
+    if(order.getDeliveryPartner() != null) {
+        DeliveryPartner partner = order.getDeliveryPartner();
+        DeliveryPartnerResponse res = new DeliveryPartnerResponse();
+        res.setId(partner.getId().toHexString());
+        res.setName(partner.getName());
+        res.setEmail(partner.getEmail());
+        res.setPhone(partner.getPhone());
+        res.setAvatar(partner.getAvatar());
+        res.setVehicleType(partner.getVehicleType());
+        res.setIsActive(partner.getIsActive());
+        res.setCreatedAt(partner.getCreatedAt());
+        res.setUpdatedAt(partner.getUpdatedAt());
+        response.setDeliveryPartner(res);
+    }
         response.setDeliveryOtp(order.getDeliveryOtp() != null ? order.getDeliveryOtp() : "" );
         response.setLiveLocation(order.getLiveLocation() != null ? order.getLiveLocation() : null );
         response.setIsPaid(order.getIsPaid());
@@ -314,6 +388,8 @@ public class OrderService {
     }
 
     // DELIVERY PARTNER ACCESS TO CHANGE STATUS TO DELIVERED CANCELLED AND OUT FOR DELIVERY
+    @Transactional
+    @PreAuthorize(value = "hasRole('DELIVERY')")
     public ResponseEntity<Order> changeStatus(ObjectId orderId, OrderStatus newStatus) {
 
         Order order = orderRepo.findById(orderId)
@@ -347,5 +423,29 @@ public class OrderService {
         Order updatedOrder = orderRepo.save(order);
 
         return ResponseEntity.ok(updatedOrder);
+    }
+
+    private UserResponse mapUserToResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setAvatar(user.getAvatar());
+        response.setRole(user.getRole());
+        response.setCreatedAt(user.getCreatedAt());
+        response.setUpdatedAt(user.getUpdatedAt());
+        return response;
+    }
+
+    public LiveLocation updateLocation(LiveLocation location,ObjectId orderId,ObjectId deliveryPartnerId) {
+        Order order = orderRepo.findByIdAndDeliveryPartnerId(orderId, deliveryPartnerId).orElse(null);
+        if(order == null) {
+            throw new RuntimeException("Order or DeliveryPartner Not Exist");
+        }
+        order.setLiveLocation(location);
+        Order saved = orderRepo.save(order);
+        return saved.getLiveLocation();
+
     }
 }

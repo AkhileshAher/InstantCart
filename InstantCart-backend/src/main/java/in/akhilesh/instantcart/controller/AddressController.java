@@ -4,6 +4,7 @@ import in.akhilesh.instantcart.dto.address.AddressRequest;
 import in.akhilesh.instantcart.dto.address.AddressResponse;
 import in.akhilesh.instantcart.security.JwtPrincipal;
 import in.akhilesh.instantcart.service.AddressService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -30,7 +31,7 @@ public class AddressController {
 
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(
-            Authentication authentication, @RequestBody AddressRequest request
+            Authentication authentication, @RequestBody @Valid AddressRequest request
     ) {
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         ObjectId userId = principal.getUserId();
@@ -45,7 +46,7 @@ public class AddressController {
     public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable ObjectId id,
             Authentication authentication,
-            @RequestBody AddressRequest request
+            @RequestBody @Valid AddressRequest request
     ) {
 
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
