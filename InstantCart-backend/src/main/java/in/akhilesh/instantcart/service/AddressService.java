@@ -6,12 +6,13 @@ import in.akhilesh.instantcart.entity.Address;
 import in.akhilesh.instantcart.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,10 @@ public class AddressService {
     private final AddressRepository addressRepository;
 
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
+    @Cacheable(
+            value = "addresses",
+            key = "#userId.toHexString()"
+    )
     public List<AddressResponse> fetchAddress(ObjectId userId) {
 
         return addressRepository.findByUserId(userId)
@@ -29,8 +34,16 @@ public class AddressService {
     }
 
     @Transactional
+    @CacheEvict(
+            value = "addresses",
+            key = "#userId.toHexString()"
+    )
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse createAddress(ObjectId userId, AddressRequest request) {
+
+        if (Boolean.TRUE.equals(request.getIsDefault())) {
+            clearExistingDefault(userId, null);
+        }
 
         Address address = mapRequestToAddress(userId,request);
         Address saved = addressRepository.save(address);
@@ -40,11 +53,19 @@ public class AddressService {
 
 
     @Transactional
+    @CacheEvict(
+            value = "addresses",
+            key = "#userId.toHexString()"
+    )
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse updateAddress(ObjectId addressId, ObjectId userId, AddressRequest request) {
 
         Address address = addressRepository.findByIdAndUserId(addressId, userId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
+
+        if (Boolean.TRUE.equals(request.getIsDefault())) {
+            clearExistingDefault(userId, addressId);
+        }
 
         address.setLabel(request.getLabel());
         address.setAddress(request.getAddress());
@@ -59,6 +80,10 @@ public class AddressService {
     }
 
     @Transactional
+    @CacheEvict(
+            value = "addresses",
+            key = "#userId.toHexString()"
+    )
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public void deleteAddress(ObjectId addressId, ObjectId userId) {
 
@@ -66,6 +91,18 @@ public class AddressService {
                 .orElseThrow(() -> new RuntimeException("Address not found"));
 
         addressRepository.delete(address);
+    }
+
+    private void clearExistingDefault(ObjectId userId, ObjectId excludeAddressId) {
+        List<Address> addresses = addressRepository.findByUserId(userId);
+        for (Address addr : addresses) {
+            boolean isSameAddress =
+                    excludeAddressId != null && addr.getId().equals(excludeAddressId);
+            if (Boolean.TRUE.equals(addr.getIsDefault()) && !isSameAddress) {
+                addr.setIsDefault(false);
+                addressRepository.save(addr);
+            }
+        }
     }
 
     private AddressResponse mapToResponse(Address address) {

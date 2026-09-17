@@ -14,6 +14,7 @@ import in.akhilesh.instantcart.repository.UserRepository;
 import in.akhilesh.instantcart.utils.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -105,12 +106,6 @@ public class OrderService {
         address.setLng(addressRequest.getLng());
         order.setShippingAddress(address);
 
-        // Live Temp Location
-//        LiveLocation location = new LiveLocation();
-//        location.setLng(addressRequest.getLng());
-//        location.setLat(addressRequest.getLat());
-//        order.setLiveLocation(location);
-
         // PAYMENT
         String paymentMethod = request.getPaymentMethod();
 
@@ -144,6 +139,11 @@ public class OrderService {
         return mapOrderToResponse(saved,userId);
     }
 
+    @Cacheable(
+            value = "userOrders",
+            key = "#userId.toHexString() + ':' + " +
+                    "T(java.util.Objects).toString(#status, 'ALL')"
+    )
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public List<OrderResponse> getUserOrders(ObjectId userId, OrderStatus status) {
 
@@ -221,26 +221,23 @@ public class OrderService {
     }
 
 
-    @Transactional
-    @PreAuthorize(value = "hasRole('VENDOR') or hasRole('DELIVERY')")
-    private void updateOrderStatus(Order order, OrderStatus status) {
+
+
+    private void    updateOrderStatus(Order order, OrderStatus status) {
 
         order.setStatus(status);
 
-        // Add status history
         List<OrderStatusHistory> historyList = order.getStatusHistory();
         if (historyList == null) {
             historyList = new ArrayList<>();
         }
 
         OrderStatusHistory history = new OrderStatusHistory();
-
         history.setStatus(status);
         history.setChangedAt(LocalDateTime.now());
         historyList.add(history);
         order.setStatusHistory(historyList);
     }
-
 
     @Transactional
     @PreAuthorize("hasRole('DELIVERY') and #deliveryPartnerId == authentication.principal.userId")
@@ -258,8 +255,6 @@ public class OrderService {
         }
 
         if (order.getDeliveryOtp() == null || !order.getDeliveryOtp().equals(otp)) {
-            System.out.println(order.getDeliveryOtp());
-            System.out.println(otp);
             throw new RuntimeException("Invalid delivery OTP");
         }
 
@@ -267,11 +262,9 @@ public class OrderService {
             throw new RuntimeException("Order is not out for delivery");
         }
 
-        order.setStatus(OrderStatus.DELIVERED);
         updateOrderStatus(order, OrderStatus.DELIVERED);
         order.setDeliveryOtp("");
-        Order saved = orderRepo.save(order);
-        return saved;
+        return orderRepo.save(order);
     }
 
     @PreAuthorize(value = "hasRole('VENDOR')")
@@ -281,9 +274,11 @@ public class OrderService {
 
         return orders.stream().map(order -> {
                     User customer = userRepo.findById(order.getUserId()).orElse(null);
-                    User deliveryPartner = null;
+
+                    DeliveryPartner deliveryPartner = null;
+
                     if (order.getDeliveryPartnerId() != null) {
-                        deliveryPartner = userRepo.findById(order.getDeliveryPartnerId()).orElse(null);
+                        deliveryPartner = deliveryPartnerRepository.findById(order.getDeliveryPartnerId()).orElse(null);
                     }
 
                     return new AdminOrderResponse(
@@ -301,8 +296,6 @@ public class OrderService {
     @Transactional
     @PreAuthorize(value = "hasRole('VENDOR')")
     public Order assignDeliveryPartner(ObjectId orderId, ObjectId deliveryPartnerId) {
-        System.out.println(orderId);
-        System.out.println(deliveryPartnerId);;
         Order order = orderRepo.findById(orderId)
                         .orElseThrow(() -> new RuntimeException("Order does not exist with this ID"));
 
@@ -390,10 +383,15 @@ public class OrderService {
     // DELIVERY PARTNER ACCESS TO CHANGE STATUS TO DELIVERED CANCELLED AND OUT FOR DELIVERY
     @Transactional
     @PreAuthorize(value = "hasRole('DELIVERY')")
-    public ResponseEntity<Order> changeStatus(ObjectId orderId, OrderStatus newStatus) {
+    public ResponseEntity<Order> changeStatus(ObjectId orderId, OrderStatus newStatus,ObjectId deliveryPartnerId) {
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("No Order Exist with this id: " + orderId));
+
+
+        if (order.getDeliveryPartnerId() == null || !order.getDeliveryPartnerId().equals(deliveryPartnerId)) {
+            throw new RuntimeException("You are not assigned to this order");
+        }
 
         OrderStatus currentStatus = order.getStatus();
 
@@ -410,12 +408,12 @@ public class OrderService {
             throw new RuntimeException("Invalid status change: " + currentStatus + " → " + newStatus);
         }
 
-        if(newStatus != OrderStatus.DELIVERED && newStatus != OrderStatus.OUT_FOR_DELIVERY && newStatus != OrderStatus.CANCELLED ) {
-            throw new RuntimeException("You don't have permission");
+        if (newStatus != OrderStatus.OUT_FOR_DELIVERY && newStatus != OrderStatus.CANCELLED) {
+            throw new RuntimeException("You don't have permission to change to this status");
         }
 
-        if(currentStatus == OrderStatus.OUT_FOR_DELIVERY && newStatus == OrderStatus.DELIVERED) {
-            throw new RuntimeException("Please Cancel The Order or Deliver to Custom, Cant Change Status to DELIVERED");
+        if (newStatus == OrderStatus.DELIVERED) {
+            throw new RuntimeException("Use OTP verification to mark the order as delivered");
         }
 
         order.setStatus(newStatus);

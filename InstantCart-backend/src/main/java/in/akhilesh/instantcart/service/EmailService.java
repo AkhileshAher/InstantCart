@@ -2,11 +2,13 @@ package in.akhilesh.instantcart.service;
 
 import in.akhilesh.instantcart.dto.OrderEmailData;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EmailService {
 
@@ -57,8 +59,7 @@ public class EmailService {
             mail.setText(body);
             javaMailSender.send(mail);
         } catch (Exception e) {
-            // FIX THIS WHEN EXTERNALIZE MAIL SERVICE
-            // CONTINUE WORK
+            log.error("Failed to send email to {} (subject: {}): {}", to, subject, e.getMessage(), e);
         }
     }
 

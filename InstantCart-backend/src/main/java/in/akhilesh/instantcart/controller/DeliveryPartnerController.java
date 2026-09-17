@@ -80,8 +80,9 @@ public class DeliveryPartnerController {
 
     // DELIVERY PARTNER ACCESS TO CHANGE STATUS TO DELIVERED CANCELLED AND OUT FOR DELIVERY
     @PatchMapping("/status-update/{orderId}")
-    public ResponseEntity<Order> changeOrderStatus(@PathVariable ObjectId orderId, @RequestParam OrderStatus status) {
-        return orderService.changeStatus(orderId,status);
+    public ResponseEntity<Order> changeOrderStatus(@PathVariable ObjectId orderId, @RequestParam OrderStatus status,Authentication authentication) {
+        JwtPrincipal partner = (JwtPrincipal) authentication.getPrincipal();
+        return orderService.changeStatus(orderId,status,partner.getUserId());
     }
 
     @PutMapping("/location/{orderId}")

@@ -6,6 +6,9 @@ import in.akhilesh.instantcart.entity.Product;
 import in.akhilesh.instantcart.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,20 +33,27 @@ public class ProductService {
     private final CloudinaryImageService cloudinary;
 
 
+    @Cacheable(
+            value = "popularProducts",
+            key = "#limit",
+            unless = "#result == null"
+    )
     public List<ProductResponse> popularProducts(Integer limit) {
 
         Page<Product> productPage =
                 productRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "rating")));
 
-        List<ProductResponse> products = productPage.getContent()
+        return productPage.getContent()
                 .stream()
                 .map(this::mapProductToResponse)
                 .toList();
-
-        return products;
     }
 
-
+    @Cacheable(
+            value = "searchProducts",
+            key = "#query.trim().toLowerCase()",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<ProductResponse> searchProducts(String query) {
 
         if (query == null || query.isBlank()) {
@@ -57,6 +67,14 @@ public class ProductService {
     }
 
 
+    @Cacheable(
+            value = "products",
+            key = "T(java.util.Objects).toString(#sort, '') + ':' + " +
+                    "T(java.util.Objects).toString(#category, '') + ':' + " +
+                    "T(java.util.Objects).toString(#minPrice, '') + ':' + " +
+                    "T(java.util.Objects).toString(#maxPrice, '')",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<ProductResponse> getProducts(
             String sort,
             String category,
@@ -108,6 +126,11 @@ public class ProductService {
         return products.stream().map(this::mapProductToResponse).toList();
     }
 
+    @Cacheable(
+            value = "flashDeals",
+            key = "'all'",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<ProductResponse> getFlashDeals() {
 
         return productRepository
@@ -124,6 +147,10 @@ public class ProductService {
                 .toList();
     }
 
+    @Cacheable(
+            value = "productById",
+            key = "#productId.toHexString()"
+    )
     public ProductResponse getProduct(ObjectId productId) {
 
         Product product = productRepository.findById(productId)
@@ -133,6 +160,12 @@ public class ProductService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "popularProducts", allEntries = true),
+            @CacheEvict(value = "searchProducts", allEntries = true),
+            @CacheEvict(value = "flashDeals", allEntries = true)
+    })
     @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public ProductResponse addProduct(ObjectId vendorId, ProductRequest request) {
 
@@ -143,6 +176,13 @@ public class ProductService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#productId.toHexString()"),
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "popularProducts", allEntries = true),
+            @CacheEvict(value = "searchProducts", allEntries = true),
+            @CacheEvict(value = "flashDeals", allEntries = true)
+    })
     @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public ProductResponse updateProduct(ObjectId productId, ObjectId vendorId, ProductRequest request) {
 
@@ -166,6 +206,13 @@ public class ProductService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#productId.toHexString()"),
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "popularProducts", allEntries = true),
+            @CacheEvict(value = "searchProducts", allEntries = true),
+            @CacheEvict(value = "flashDeals", allEntries = true)
+    })
     @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
     public void deleteProduct(ObjectId productId, ObjectId vendorId) {
 

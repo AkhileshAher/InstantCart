@@ -13,6 +13,8 @@ import in.akhilesh.instantcart.repository.OrderRepository;
 import in.akhilesh.instantcart.repository.ProductRepository;
 import in.akhilesh.instantcart.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +36,7 @@ public class DashboardService {
         long totalProducts = productRepository.count();
         long totalOrders = orderRepository.count();
         long totalPartners = deliveryPartnerRepository.count();
-        long outOfStock =  productRepository.countByStock(0);
+        long outOfStock = productRepository.countByStock(0);
 
         DashboardResponse response = new DashboardResponse();
         response.setTotalUsers(totalUsers);
@@ -43,14 +45,11 @@ public class DashboardService {
         response.setTotalPartners(totalPartners);
         response.setOutOfStock(outOfStock);
 
-        response.setRecentOrders(orderRepository.findAll()
+
+        response.setRecentOrders(
+                orderRepository.findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt")))
+                        .getContent()
                         .stream()
-                        .sorted(
-                                Comparator.comparing(
-                                        Order::getCreatedAt
-                                ).reversed()
-                        )
-                        .limit(10)
                         .map(this::mapOrderToResponse)
                         .toList()
         );

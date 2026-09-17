@@ -33,6 +33,11 @@ public class AuthService {
         if(userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("User with this Email Already Exist");
         }
+
+        if (request.getRole() != UserRole.CUSTOMER && request.getRole() != UserRole.VENDOR) {
+            throw new RuntimeException("Invalid User Role Entered");
+        }
+
         User user = mapRequestToUser(request);
         User savedUser = userRepository.save(user);
         TokenRequest tokenUser = mapUserToTokenRequest(savedUser);

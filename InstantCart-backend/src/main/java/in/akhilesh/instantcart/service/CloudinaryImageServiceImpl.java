@@ -16,13 +16,19 @@ public class CloudinaryImageServiceImpl implements CloudinaryImageService {
     private final Cloudinary cloudinary;
 
     @Override
-    @PreAuthorize("hasRole('VENDOR')")
-    public Map upload(MultipartFile file) {
+    @PreAuthorize("isAuthenticated()")
+    public Map<?, ?> upload(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("No file provided for upload");
+        }
         try {
-            Map data = this.cloudinary.uploader().upload(file.getBytes(), Map.of());
-            return data;
+            return cloudinary.uploader().upload(file.getBytes(), Map.of());
         } catch (IOException e) {
-            throw new RuntimeException("Image Uploading Failed",e);
+            throw new RuntimeException("Image Uploading Failed", e);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Image Uploading Failed", e);
         }
     }
+
+
 }
