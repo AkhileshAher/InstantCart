@@ -21,10 +21,7 @@ public class AddressService {
     private final AddressRepository addressRepository;
 
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
-    @Cacheable(
-            value = "addresses",
-            key = "#userId.toHexString()"
-    )
+    @Cacheable(value = "addresses", key = "#userId.toHexString()")
     public List<AddressResponse> fetchAddress(ObjectId userId) {
 
         return addressRepository.findByUserId(userId)
@@ -34,10 +31,7 @@ public class AddressService {
     }
 
     @Transactional
-    @CacheEvict(
-            value = "addresses",
-            key = "#userId.toHexString()"
-    )
+    @CacheEvict(value = "addresses", key = "#userId.toHexString()")
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse createAddress(ObjectId userId, AddressRequest request) {
 
@@ -53,10 +47,7 @@ public class AddressService {
 
 
     @Transactional
-    @CacheEvict(
-            value = "addresses",
-            key = "#userId.toHexString()"
-    )
+    @CacheEvict(value = "addresses", key = "#userId.toHexString()")
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public AddressResponse updateAddress(ObjectId addressId, ObjectId userId, AddressRequest request) {
 
@@ -80,10 +71,7 @@ public class AddressService {
     }
 
     @Transactional
-    @CacheEvict(
-            value = "addresses",
-            key = "#userId.toHexString()"
-    )
+    @CacheEvict(value = "addresses", key = "#userId.toHexString()")
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
     public void deleteAddress(ObjectId addressId, ObjectId userId) {
 

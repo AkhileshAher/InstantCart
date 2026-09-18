@@ -93,7 +93,6 @@ public class OrderService {
         order.setItems(orderItems);
 
         // SHIPPING ADDRESS
-
         ShippingAddressRequest addressRequest = request.getShippingAddress();
 
         ShippingAddress address = new ShippingAddress();
@@ -274,13 +273,10 @@ public class OrderService {
 
         return orders.stream().map(order -> {
                     User customer = userRepo.findById(order.getUserId()).orElse(null);
-
                     DeliveryPartner deliveryPartner = null;
-
                     if (order.getDeliveryPartnerId() != null) {
                         deliveryPartner = deliveryPartnerRepository.findById(order.getDeliveryPartnerId()).orElse(null);
                     }
-
                     return new AdminOrderResponse(
                             order.getId().toHexString(),
                             customer != null ? customer.getName() : null,

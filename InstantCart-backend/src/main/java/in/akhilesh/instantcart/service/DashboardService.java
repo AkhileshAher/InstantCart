@@ -3,10 +3,8 @@ package in.akhilesh.instantcart.service;
 import in.akhilesh.instantcart.dto.admin.DashboardResponse;
 import in.akhilesh.instantcart.dto.delivery.DeliveryPartnerResponse;
 import in.akhilesh.instantcart.dto.order.OrderResponse;
-import in.akhilesh.instantcart.dto.user.UserResponse;
 import in.akhilesh.instantcart.entity.DeliveryPartner;
 import in.akhilesh.instantcart.entity.Order;
-import in.akhilesh.instantcart.entity.User;
 import in.akhilesh.instantcart.entity.enums.UserRole;
 import in.akhilesh.instantcart.repository.DeliveryPartnerRepository;
 import in.akhilesh.instantcart.repository.OrderRepository;
@@ -18,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor

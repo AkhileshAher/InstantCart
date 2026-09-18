@@ -14,6 +14,7 @@ public class EmailService {
 
     private final JavaMailSender javaMailSender;
 
+
     public void sendMail(String to, String subject, OrderEmailData emailData) {
         String body = """
         Hello InstantCart User,

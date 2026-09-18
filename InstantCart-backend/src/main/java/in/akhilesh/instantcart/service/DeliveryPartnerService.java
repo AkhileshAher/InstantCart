@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,29 +23,20 @@ public class DeliveryPartnerService {
     private final PasswordEncoder passwordEncoder;
 
     @PreAuthorize(value = "hasRole('VENDOR')")
-    @Cacheable(
-            value = "allDeliveryPartners",
-            key = "'all'"
-    )
+    @Cacheable(value = "allDeliveryPartners", key = "'all'")
     public List<DeliveryPartnerResponse> getAllDeliveryPartners() {
         return repository.findAll().stream()
                 .map(this::mapToDeliveryResponse)
                 .toList();
     }
 
-    @Cacheable(
-            value = "activeDeliveryPartners",
-            key = "'active'"
-    )
+    @Cacheable(value = "activeDeliveryPartners", key = "'active'")
     public List<DeliveryPartner> getActiveDeliveryPartners() {
         return repository.findByIsActiveTrue();
     }
 
     @PreAuthorize(value = "hasRole('VENDOR')")
-    @Cacheable(
-            value = "deliveryPartner",
-            key = "#id.toHexString()"
-    )
+    @Cacheable(value = "deliveryPartner", key = "#id.toHexString()")
     public DeliveryPartnerResponse getDeliveryPartner(ObjectId id) {
         DeliveryPartner deliveryPartner = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Delivery partner not found"));
