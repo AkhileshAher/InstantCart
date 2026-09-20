@@ -7,6 +7,7 @@ import OrderOTP from "../components/OrderTracking/OrderOTP";
 import LiveMap from "../components/OrderTracking/LiveMap";
 import OrderTimeLine from "../components/OrderTracking/OrderTimeLine";
 import api from "../config/api";
+import toast from "react-hot-toast";
 
 function OrderTracking() {
 
@@ -40,8 +41,8 @@ function OrderTracking() {
           });
         }
 
-      } catch(error) {
-
+      } catch(error :any) {
+          toast.error(error.response?.data?.message);
       }
     }
     fetchLocation();

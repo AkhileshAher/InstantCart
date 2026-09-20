@@ -1,5 +1,11 @@
 
-export default function Alert({ message, onConfirm, onCancel }) {
+interface AlertProps {
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
+export default function Alert({ message, onConfirm, onCancel } : AlertProps ) {
     return (
         <div className="flex flex-col items-center bg-white shadow-md rounded-xl py-6 px-5 md:w-115 w-92.5 border border-gray-200">
             <div className="flex items-center justify-center p-4 bg-red-100 rounded-full">

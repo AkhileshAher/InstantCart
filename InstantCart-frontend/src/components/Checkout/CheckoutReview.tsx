@@ -70,7 +70,7 @@ export default function CheckoutReview({
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       }
-    } catch (error) {
+    } catch (error:any) {
       setProcessing(false);
       toast.error(error?.response?.data?.message || "Something went wrong");
     }

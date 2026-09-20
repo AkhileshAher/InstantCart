@@ -8,7 +8,6 @@ interface OtpModalProps {
 }
 
 export default function OtpModal({
-  orderId,
   setOtpModal,
   otp,
   setOtp,
@@ -48,7 +47,7 @@ export default function OtpModal({
               Cancel
             </button>
             <button
-              onClick={() => handleComplete(orderId)}
+              onClick={() => handleComplete()}
               disabled={otp.length !== 6 || submitting}
               className="flex-1 py-2.5 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
             >
