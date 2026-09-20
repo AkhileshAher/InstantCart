@@ -6,6 +6,14 @@ spring:
     mongodb:
       uri: ${DB_URL}
 
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      connect-timeout: 10s
+      timeout: 10s
+
   servlet:
     multipart:
       max-file-size: 2MB

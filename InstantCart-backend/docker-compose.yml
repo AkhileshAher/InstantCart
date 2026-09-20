@@ -1,7 +1,7 @@
 services:
-
   instantcart-backend:
     build: .
+    image: akhileshaher/instantcart-backend:latest
     container_name: instantcart-backend
 
     ports:
