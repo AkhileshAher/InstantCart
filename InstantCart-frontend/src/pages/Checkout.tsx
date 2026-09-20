@@ -34,8 +34,8 @@ function Checkout() {
 
   const [paymentMethod, setMethodPayment] = useState('card');
 
-  const deliveryFee = cartTotal > 20 ? 0 : 1.99;
-  const tax = cartTotal * 0.08;
+  const deliveryFee = cartTotal >= 200 ? 0 : 40;
+  const tax = cartTotal * 0.05;
   const total = cartTotal + deliveryFee + tax;
 
   const steps: { key: string; label: string; icon: typeof MapIcon }[] = [
@@ -43,6 +43,12 @@ function Checkout() {
     { key: "payment", label: "Payment", icon: CreditCardIcon },
     { key: "review", label: "Review", icon: CheckIcon }
   ];
+
+  const handlePaymentSuccess = (order: any) => {
+    clearCart();
+    toast.success("Payment successful and order placed!");
+    navigate(`/orders/${order.id}`);
+};
 
   const handlePlaceorder = async () => {
     setLoading(true);
@@ -145,7 +151,7 @@ function Checkout() {
 
             {step === "payment" && <CheckoutPayment paymentMethod={paymentMethod} setPaymentMethod={setMethodPayment} setStep={setStep} />}
 
-            {step === "review" && <CheckoutReview address={address} items={items} handlePlaceOrder={handlePlaceorder} loading={loading} total={cartTotal} />}
+            {step === "review" && <CheckoutReview address={address} items={items} handlePlaceOrder={handlePlaceorder} loading={loading} total={total} paymentMethod={paymentMethod} onPaymentSuccess={handlePaymentSuccess} />}
 
 
 

@@ -59,7 +59,7 @@ public class OrderController {
 
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         ObjectId userId = principal.getUserId();
-        OrderResponse response = orderService.createOrder(userId, request);
+        OrderResponse response = orderService.createOrder(userId, request,false);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -79,6 +79,25 @@ public class OrderController {
                         userId
                 )
         );
+    }
+
+
+    @GetMapping("/my-orders")
+    public ResponseEntity<List<OrderResponse>> getMyOrdersToDeliver(
+            Authentication authentication,
+            @RequestParam String status
+    ) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+
+        ObjectId deliveryPartnerId = principal.getUserId();
+
+        List<OrderResponse> ordersList =
+                orderService.getOrdersOfDeliveryPartner(
+                        deliveryPartnerId,
+                        status
+                );
+
+        return ResponseEntity.ok(ordersList);
     }
 
     @DeleteMapping("/{orderId}")

@@ -1,5 +1,6 @@
 package in.akhilesh.instantcart.service;
 
+import in.akhilesh.instantcart.dto.payment.PaymentCartItem;
 import in.akhilesh.instantcart.dto.product.ProductRequest;
 import in.akhilesh.instantcart.dto.product.ProductResponse;
 import in.akhilesh.instantcart.entity.Product;
@@ -218,6 +219,27 @@ public class ProductService {
         }
         product.setStock(0);
         productRepository.save(product);
+    }
+
+    public Double checkoutTotalPrice(List<PaymentCartItem> items) {
+        double subtotal = 0.0;
+
+        for (PaymentCartItem item : items) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
+
+            double itemTotal = product.getPrice() * item.getQuantity();
+
+            subtotal += itemTotal;
+        }
+
+        subtotal += subtotal >= 200 ? 0 : 40;
+        subtotal += subtotal * 0.05;
+
+        System.out.println("subtotal: " + subtotal);
+
+        return subtotal;
+
     }
 
     private Product calculateDiscount(Product product) {

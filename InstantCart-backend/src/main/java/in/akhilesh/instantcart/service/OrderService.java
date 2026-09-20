@@ -14,6 +14,7 @@ import in.akhilesh.instantcart.repository.UserRepository;
 import in.akhilesh.instantcart.utils.OtpGenerator;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -37,8 +38,12 @@ public class OrderService {
 
 
     @Transactional
+    @CacheEvict(
+            value = "userOrders",
+            allEntries = true
+    )
     @PreAuthorize(value = "hasRole('CUSTOMER') and #userId == authentication.principal.userId")
-    public OrderResponse createOrder(ObjectId userId, CreateOrderRequest request) {
+    public OrderResponse createOrder(ObjectId userId, CreateOrderRequest request, boolean isPaid) {
 
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new IllegalArgumentException("Order items cannot be empty");
@@ -109,12 +114,18 @@ public class OrderService {
         String paymentMethod = request.getPaymentMethod();
 
         if (paymentMethod == null || paymentMethod.isBlank()) {
-            paymentMethod = "card";
+            throw new IllegalArgumentException("Payment method is required");
         }
 
-        order.setPaymentMethod(paymentMethod);
+        if (!paymentMethod.equalsIgnoreCase("card")
+                && !paymentMethod.equalsIgnoreCase("cod")) {
 
-        double deliveryFee = subTotal >= 500 ? 0.0 : 40.0;
+            throw new IllegalArgumentException("Invalid payment method");
+        }
+
+        order.setPaymentMethod(paymentMethod.toLowerCase());
+
+        double deliveryFee = subTotal >= 200 ? 0.0 : 40.0;
         double tax = subTotal * 0.05;
         double total = subTotal + deliveryFee + tax;
 
@@ -131,7 +142,7 @@ public class OrderService {
         statusHistory.add(history);
 
         order.setStatusHistory(statusHistory);
-        order.setIsPaid(false);
+        order.setIsPaid(isPaid);
         order.setDeliveryOtp("");
 
         Order saved = orderRepo.save(order);
@@ -220,9 +231,32 @@ public class OrderService {
     }
 
 
+    public List<OrderResponse> getOrdersOfDeliveryPartner(ObjectId deliveryPartnerId, String status) {
+
+        List<Order> orders;
+
+        if ("ACTIVE".equalsIgnoreCase(status)) {
+
+            orders = orderRepo.findByDeliveryPartnerIdAndStatusIn(deliveryPartnerId,
+                    List.of(OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY));
+
+        } else if ("DELIVERED".equalsIgnoreCase(status)) {
+
+            orders = orderRepo.findByDeliveryPartnerIdAndStatus(deliveryPartnerId, OrderStatus.DELIVERED);
+
+        } else {
+            throw new IllegalArgumentException("Invalid delivery order status: " + status);
+        }
+
+        return orders.stream()
+                .map(order -> mapOrderToResponse(order, deliveryPartnerId))
+                .toList();
+    }
 
 
-    private void    updateOrderStatus(Order order, OrderStatus status) {
+
+
+    private void updateOrderStatus(Order order, OrderStatus status) {
 
         order.setStatus(status);
 

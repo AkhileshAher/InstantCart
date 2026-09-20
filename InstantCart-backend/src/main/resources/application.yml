@@ -30,15 +30,15 @@ spring:
           auth: true
           starttls:
             enable: true
-#logging:
-#  level:
-#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
-#    org.springframework.data.mongodb.repository.query: DEBUG
-#    org.mongodb.driver.protocol.command: DEBUG
 
 jwt:
   secret:
     key: ${JWT_SECRET}
+
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID} #"rzp_test_Td0Wic3t3B5luP"
+  key-secret: ${RAZORPAY_KEY_SECRET} #"W8vriNtysoeNTaZbinDt4DYw"
 
 server:
   port: 9091
@@ -52,3 +52,8 @@ cloudinary:
 
 
 #debug: true
+#logging:
+#  level:
+#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+#    org.springframework.data.mongodb.repository.query: DEBUG
+#    org.mongodb.driver.protocol.command: DEBUG
