@@ -46,7 +46,6 @@ function Checkout() {
 
   const handlePaymentSuccess = (order: any) => {
     clearCart();
-    toast.success("Payment successful and order placed!");
     navigate(`/orders/${order.id}`);
 };
 

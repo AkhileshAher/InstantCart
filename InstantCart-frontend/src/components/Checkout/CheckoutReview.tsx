@@ -2,7 +2,7 @@ import { CheckIcon, TruckIcon } from "lucide-react";
 import type { Address } from "../../types";
 import toast from "react-hot-toast";
 import api from "../../config/api";
-import { useCart } from "../../context/CartContext";
+import { useState } from "react";
 
 interface CheckoutReviewProps {
   address: Address;
@@ -25,7 +25,7 @@ export default function CheckoutReview({
 }: CheckoutReviewProps) {
   const currency = "₹";
 
-  const {clearCart} = useCart();
+  const [processing, setProcessing] = useState(false);
 
   const payload = {
     items: items.map((item) => ({
@@ -35,6 +35,9 @@ export default function CheckoutReview({
   };
 
   const handlePay = async () => {
+    if (processing || loading) return;
+    setProcessing(true);
+
     try {
       if (paymentMethod === "cod") {
         await handlePlaceOrder();
@@ -43,7 +46,6 @@ export default function CheckoutReview({
 
       if (paymentMethod === "card") {
         const response = await api.post(`/payments/create-pay`, payload);
-        console.log("Pay Order :", response);
 
         const options = {
           key: "rzp_test_Td0Wic3t3B5luP",
@@ -55,6 +57,7 @@ export default function CheckoutReview({
           handler: paymentHandler,
           modal: {
             ondismiss: function () {
+              setProcessing(false);
               toast.error("Payment Cancelled !!");
               return;
             },
@@ -65,19 +68,16 @@ export default function CheckoutReview({
         };
 
         const razorpay = new window.Razorpay(options);
-
         razorpay.open();
-        console.log(razorpay);
       }
     } catch (error) {
+      setProcessing(false);
       toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };
 
   const paymentHandler = async (paymentResponse: any) => {
     try {
-      console.log("Razorpay response:", paymentResponse);
-
       const response = await api.post("/payments/verify", {
         razorpay_order_id: paymentResponse.razorpay_order_id,
         razorpay_payment_id: paymentResponse.razorpay_payment_id,
@@ -103,18 +103,17 @@ export default function CheckoutReview({
         },
       });
 
-      console.log("Order created:", response.data);
       onPaymentSuccess(response.data);
-      clearCart();
       toast.success("Payment successful and order placed!");
     } catch (error: any) {
-      console.error("Payment verification failed:", error);
-
+      setProcessing(false);
       toast.error(
         error?.response?.data?.message || "Payment verification failed",
       );
     }
   };
+
+  const isProcessing = processing || loading;
 
   return (
     <div className="bg-white rounded-2xl p-6 animate-fade-in">
@@ -163,10 +162,10 @@ export default function CheckoutReview({
 
       <button
         onClick={handlePay}
-        disabled={loading}
+        disabled={isProcessing}
         className="w-full py-3 bg-app-orange text-white font-semibold rounded-xl hover:bg-app-orange-dark transition-colors disabled:opacity-60 active:scale-[0.98]"
       >
-        {loading
+        {isProcessing
           ? "Placing Order..."
           : `Place Order — ${currency}${total.toFixed(2)}`}
       </button>

@@ -24,7 +24,7 @@ const NewsLetter = () => {
                         placeholder="Enter your email"
                         className="focus:outline-none pl-10 py-5 bg-transparent w-full"
                         required />
-                    <button className="shrink-0 mr-2 px-6 py-3 text-sm bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-md active:scale-95 transition duration-300 text-white">
+                    <button className="shrink-0 mr-2 px-6 py-3 text-sm bg-linear-to-r from-indigo-600 to-indigo-800 rounded-md active:scale-95 transition duration-300 text-white">
                         Subscribe now
                     </button>
                 </form>

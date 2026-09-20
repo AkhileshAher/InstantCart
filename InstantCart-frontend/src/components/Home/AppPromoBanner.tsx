@@ -1,6 +1,4 @@
-import React from 'react'
 import { appPromoBannerData, delivery_truck } from '../../assets/data'
-import { data } from 'react-router-dom'
 
 const AppPromoBanner = () => {
     return (

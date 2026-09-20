@@ -11,7 +11,7 @@ interface AddressCardProps {
     setAddresses: (addresses: Address[]) => void
 }
 
-const AddressCard = ({ addr, onEditHandler, setAddresses }: AddressCardProps) => {
+const AddressCard = ({ addr, onEditHandler }: AddressCardProps) => {
     const [showAlert, setShowAlert] = useState<boolean>(false);
 
     const handleDelete = async (id: string) => {

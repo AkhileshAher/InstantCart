@@ -6,7 +6,6 @@ import Loading from "../../components/Loading";
 import api from "../../config/api";
 import toast from "react-hot-toast";
 import Alert from "../../components/Alert";
-// import { dummyProducts } from "../../assets/data";
 
 export default function AdminProducts() {
 
@@ -31,7 +30,7 @@ export default function AdminProducts() {
         fetchProducts();
     }, []);
 
-    const handleMarkOutOfStock = async (id: string, name: string) => {
+    const handleMarkOutOfStock = async (id: string) => {
         try {
             await api.delete(`/products/${id}`);
             toast.success("Product Marked as out of Stock");

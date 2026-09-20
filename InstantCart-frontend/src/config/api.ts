@@ -5,9 +5,14 @@ const api = axios.create({
     withCredentials: true
 })
 
-api.interceptors.request.use((config)  =>{
-    return config;
-})
+api.interceptors.request.use(
+    (config)  =>{
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+)
 
 api.interceptors.response.use(
     (response) => response,
@@ -16,9 +21,8 @@ api.interceptors.response.use(
             if(!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
                     window.location.href = "/login"
                 }
-        } else {
-            return Promise.reject(error);
         }
+        return Promise.reject(error);
     }
 );
 

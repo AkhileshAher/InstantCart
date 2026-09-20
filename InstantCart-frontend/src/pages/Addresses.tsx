@@ -4,14 +4,11 @@ import { MapPinIcon, PlusIcon } from "lucide-react";
 import Loading from "../components/Loading";
 import AddressCard from "../components/AddressCard";
 import AddressForm from "../components/AddressForm";
-import { useAuth } from "../context/AuthContext";
 import api from "../config/api";
 import toast from "react-hot-toast";
 
 
 function Addresses() {
-
-  // const {  } = useAuth();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,11 +65,11 @@ function Addresses() {
       const payload = {...form,...coords};
 
       if(editingId) {
-        const { data } = await api.put(`/address/${editingId}`,payload);
+        await api.put(`/address/${editingId}`,payload);
         window.location.reload();
         toast.success("Address Updated!");
       } else {
-        const {data} = await api.post(`/address`,payload);
+        await api.post(`/address`,payload);
         window.location.reload();
         toast.success("Address Updated!");
       }

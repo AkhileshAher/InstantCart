@@ -1,6 +1,4 @@
 import { features } from "../../assets/data"
-import { Clock, LeafIcon, ShieldCheck, TruckIcon } from "lucide-react";
-
 
 function Features() {
     return (

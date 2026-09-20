@@ -1,4 +1,4 @@
-import { ArrowRightIcon, LeafIcon, TruckIcon } from "lucide-react"
+import { ArrowRightIcon, LeafIcon } from "lucide-react"
 import { Link } from "react-router-dom"
 import basketimg from "../../assets/basket.png";
 

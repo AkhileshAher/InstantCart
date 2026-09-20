@@ -1,6 +1,5 @@
 import { Navigate, NavLink, Outlet } from "react-router-dom";
 import { PlusIcon, PackageSearchIcon, ShoppingBagIcon, LogOutIcon, BarChart3Icon, ShieldIcon, Truck } from "lucide-react";
-import Navbar from "../../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
 import Loading from "../../components/Loading";
 

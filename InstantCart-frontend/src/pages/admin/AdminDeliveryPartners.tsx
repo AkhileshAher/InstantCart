@@ -4,7 +4,6 @@ import type { DeliveryPartner } from "../../types";
 import Loading from "../../components/Loading";
 import api from "../../config/api";
 import toast from "react-hot-toast";
-// import { dummyDeliveryPartnerData } from "../../assets/data";
 
 export default function AdminDeliveryPartners() {
     const [partners, setPartners] = useState<DeliveryPartner[]>([]);
