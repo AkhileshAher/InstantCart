@@ -70,7 +70,7 @@ export interface DeliveryPartner {
     name: string;
     email: string;
     role: string;
-    phone: string;
+    phone?: string;
     avatar: string;
     vehicleType: "bike" | "scooter" | "car";
     isActive: boolean;

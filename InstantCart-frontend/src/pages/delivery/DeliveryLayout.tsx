@@ -1,22 +1,18 @@
-import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { LogOutIcon, TruckIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Loading from "../../components/Loading";
 
 export default function DeliveryLayout() {
+    const { user, loading, logout } = useAuth();
 
-    const {user,loading,logout} = useAuth();
-    const navigate = useNavigate();
+    if (loading) return <Loading />;
 
-      if(loading) {
-        return <Loading />;
-    }
-
-     if (!user) {
+    if (!user) {
         return <Navigate to="/delivery/login" replace />;
     }
 
-     if (user.role !== "DELIVERY") {
+    if (user.role !== "DELIVERY") {
         return <Navigate to="/" replace />;
     }
 
@@ -24,18 +20,18 @@ export default function DeliveryLayout() {
         logout("/delivery/login");
     };
 
-
     return (
         <div className="min-h-screen bg-app-cream">
-            {/* Top Bar */}
             <header className="bg-white border-b border-app-border sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <TruckIcon className="size-6 text-app-green" />
                         <span className="text-lg font-semibold text-app-green">InstantCart Delivery</span>
                     </div>
+
                     <div className="flex items-center gap-3">
                         <span className="text-sm font-medium text-zinc-600">{user.name}</span>
+
                         <button onClick={handleLogout} className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <LogOutIcon className="size-4" />
                         </button>

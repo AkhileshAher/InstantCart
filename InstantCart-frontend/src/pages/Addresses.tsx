@@ -131,7 +131,7 @@ function Addresses() {
         ) : (
           <div className="space-y-4">
             {addresses.map((addr) => (
-              <AddressCard key={addr.id} addr={addr} onEditHandler={onEditHandler} setAddresses={setAddresses} />
+              <AddressCard key={addr.id} addr={addr} onEditHandler={onEditHandler} />
             ))}
           </div>
         )}

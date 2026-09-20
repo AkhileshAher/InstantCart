@@ -1,136 +1,114 @@
-import {
-  CheckCircleIcon,
-  ClockIcon,
-  MapPinIcon,
-  PhoneIcon,
-  TruckIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { CheckCircleIcon, ClockIcon, MapPinIcon, PhoneIcon, TruckIcon, XCircleIcon } from "lucide-react";
 import type { Order } from "../../types";
 import { statusColors } from "../../assets/data";
 
 interface DeliveryOrderCardProps {
-  order: Order;
-  tab: "ACTIVE" | "DELIVERED";
-  handleUpdateStatus: (orderId: string, status: string) => void;
-  setOtpModal: (orderId: string) => void;
-  setCancelModal: (orderId: string) => void;
+    order: Order;
+    tab: "ACTIVE" | "DELIVERED";
+    handleUpdateStatus: (orderId: string, status: string) => void;
+    setOtpModal: (orderId: string) => void;
+    setCancelModal: (orderId: string) => void;
 }
 
-export default function DeliveryOrderCard({
-  order,
-  tab,
-  handleUpdateStatus,
-  setOtpModal,
-  setCancelModal,
-}: DeliveryOrderCardProps) {
-  const currency = "₹";
+export default function DeliveryOrderCard({ order, tab, handleUpdateStatus, setOtpModal, setCancelModal }: DeliveryOrderCardProps) {
+    const currency = "₹";
+    const customer = typeof order.user === "string" ? null : order.user;
 
-  return (
-    <div className="bg-white rounded-2xl border border-app-border overflow-hidden">
-      <div className="px-5 py-4 border-b border-app-border flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-mono text-zinc-500">
-            #{order.id.slice(-6).toUpperCase()}
-          </span>
+    return (
+        <div className="bg-white rounded-2xl border border-app-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-app-border flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-mono text-zinc-500">#{order.id.slice(-6).toUpperCase()}</span>
 
-          <span
-            className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColors[order.status] || "bg-zinc-100 text-zinc-600"}`}
-          >
-            {order.status === "OUT_FOR_DELIVERY"
-              ? "OUT FOR DELIVERY"
-              : order.status}
-          </span>
-        </div>
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColors[order.status] || "bg-zinc-100 text-zinc-600"}`}>
+                        {order.status === "OUT_FOR_DELIVERY" ? "OUT FOR DELIVERY" : order.status}
+                    </span>
+                </div>
 
-        <span className="text-sm font-semibold text-zinc-900">
-          {currency}
-          {order.total.toFixed(2)}
-        </span>
-      </div>
+                <span className="text-sm font-semibold text-zinc-900">
+                    {currency}{order.total.toFixed(2)}
+                </span>
+            </div>
 
-      <div className="px-5 py-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm">
-          <div className="size-8 rounded-full bg-app-cream flex-center">
-            <span className="text-xs font-semibold text-app-green">
-              {order.user.name?.charAt(0)}
-            </span>
-          </div>
+            <div className="px-5 py-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                    <div className="size-8 rounded-full bg-app-cream flex-center">
+                        <span className="text-xs font-semibold text-app-green">
+                            {customer?.name?.charAt(0).toUpperCase() || "U"}
+                        </span>
+                    </div>
 
-          <div>
-            <p className="font-medium text-zinc-900">{order.user.name}</p>
+                    <div>
+                        <p className="font-medium text-zinc-900">{customer?.name || "Customer"}</p>
 
-            {order.user.phone && (
-              <p className="text-xs text-zinc-500 flex items-center gap-1">
-                <PhoneIcon className="size-3" />
-                {order.user.phone}
-              </p>
+                        {customer?.phone && (
+                            <p className="text-xs text-zinc-500 flex items-center gap-1">
+                                <PhoneIcon className="size-3" />
+                                {customer.phone}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex items-start gap-2 text-sm text-zinc-600">
+                    <MapPinIcon className="size-4 text-app-green shrink-0 mt-0.5" />
+
+                    <p>
+                        {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}
+                    </p>
+                </div>
+
+                <p className="text-xs text-zinc-500">
+                    {order.items.length} item{order.items.length > 1 ? "s" : ""} • {order.paymentMethod.toUpperCase()}
+                </p>
+            </div>
+
+            {tab === "ACTIVE" && (
+                <div className="px-5 py-3 border-t border-app-border flex flex-wrap gap-2">
+                    {order.status === "ASSIGNED" && (
+                        <button
+                            onClick={() => handleUpdateStatus(order.id, "OUT_FOR_DELIVERY")}
+                            className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-1.5"
+                        >
+                            <TruckIcon className="w-3.5 h-3.5" />
+                            Out For Delivery
+                        </button>
+                    )}
+
+                    {order.status === "OUT_FOR_DELIVERY" && (
+                        <button
+                            onClick={() => setOtpModal(order.id)}
+                            className="px-4 py-2 text-sm font-medium bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors flex items-center gap-1.5"
+                        >
+                            <CheckCircleIcon className="w-3.5 h-3.5" />
+                            Mark Delivered
+                        </button>
+                    )}
+
+                    {(order.status === "ASSIGNED" || order.status === "OUT_FOR_DELIVERY") && (
+                        <button
+                            onClick={() => setCancelModal(order.id)}
+                            className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors flex items-center gap-1.5"
+                        >
+                            <XCircleIcon className="w-3.5 h-3.5" />
+                            Cancel
+                        </button>
+                    )}
+                </div>
             )}
-          </div>
+
+            {tab === "DELIVERED" && (
+                <div className="px-5 py-3 border-t border-app-border">
+                    <p className="text-xs text-zinc-500 flex items-center gap-1">
+                        <ClockIcon className="size-3" />
+                        {new Date(order.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        })}
+                    </p>
+                </div>
+            )}
         </div>
-
-        <div className="flex items-start gap-2 text-sm text-zinc-600">
-          <MapPinIcon className="size-4 text-app-green shrink-0 mt-0.5" />
-
-          <p>
-            {order.shippingAddress.address}, {order.shippingAddress.city},{" "}
-            {order.shippingAddress.state} {order.shippingAddress.zip}
-          </p>
-        </div>
-
-        <p className="text-xs text-zinc-500">
-          {order.items.length} item{order.items.length > 1 ? "s" : ""} •{" "}
-          {order.paymentMethod.toUpperCase()}
-        </p>
-      </div>
-
-      {tab === "ACTIVE" && (
-        <div className="px-5 py-3 border-t border-app-border flex flex-wrap gap-2">
-          {order.status === "ASSIGNED" && (
-            <button
-              onClick={() => handleUpdateStatus(order.id, "OUT_FOR_DELIVERY")}
-              className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-1.5"
-            >
-              <TruckIcon className="w-3.5 h-3.5" />
-              Out For Delivery
-            </button>
-          )}
-
-          {order.status === "OUT_FOR_DELIVERY" && (
-            <button
-              onClick={() => setOtpModal(order.id)}
-              className="px-4 py-2 text-sm font-medium bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition-colors flex items-center gap-1.5"
-            >
-              <CheckCircleIcon className="w-3.5 h-3.5" />
-              Mark Delivered
-            </button>
-          )}
-
-          {(order.status === "ASSIGNED" ||
-            order.status === "OUT_FOR_DELIVERY") && (
-            <button
-              onClick={() => setCancelModal(order.id)}
-              className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors flex items-center gap-1.5"
-            >
-              <XCircleIcon className="w-3.5 h-3.5" />
-              Cancel
-            </button>
-          )}
-        </div>
-      )}
-
-      {tab === "DELIVERED" && (
-        <div className="px-5 py-3 border-t border-app-border">
-          <p className="text-xs text-zinc-500 flex items-center gap-1">
-            <ClockIcon className="size-3" />
-            {new Date(order.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+    );
 }

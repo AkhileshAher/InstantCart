@@ -1,3 +1,5 @@
+export {};
+
 interface RazorpayOptions {
     key: string;
     amount: number;
@@ -18,6 +20,8 @@ interface RazorpayInstance {
     open: () => void;
 }
 
-interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+declare global {
+    interface Window {
+        Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    }
 }

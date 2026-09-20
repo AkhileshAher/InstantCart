@@ -34,13 +34,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const addToCart = (product: Product, quantity = 1) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item,
-      ),
-    );
+    setItems((prev) => {
+      const existingItem = prev.find((item) => item.product.id === product.id);
+
+      if (existingItem) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? {
+                ...item,
+                quantity: item.quantity + quantity,
+              }
+            : item,
+        );
+      }
+
+      return [...prev, { product, quantity }];
+    });
+
     setIsCartOpen(true);
   };
 
@@ -53,6 +63,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart(productId);
       return;
     }
+
     setItems((prev) =>
       prev.map((item) =>
         item.product.id === productId ? { ...item, quantity } : item,
@@ -92,6 +103,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within CartProvider");
+
+  if (!context) {
+    throw new Error("useCart must be used within CartProvider");
+  }
+
   return context;
 }

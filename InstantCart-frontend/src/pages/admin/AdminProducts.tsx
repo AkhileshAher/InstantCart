@@ -8,19 +8,18 @@ import toast from "react-hot-toast";
 import Alert from "../../components/Alert";
 
 export default function AdminProducts() {
-
     const currency = "₹";
     const [showAlert, setShowAlert] = useState<boolean>(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedProduct, setSelectedProduct] = useState<{id: string;name: string;} | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<{ id: string; name: string } | null>(null);
 
     const fetchProducts = async () => {
         try {
-            const {data} = await api.get("/products");
+            const { data } = await api.get("/products");
             setProducts(data);
-        } catch (error : any) {
-            toast.error(error.response?.data?.message || error?.message);
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || error?.message || "Failed to load products");
         } finally {
             setLoading(false);
         }
@@ -35,8 +34,8 @@ export default function AdminProducts() {
             await api.delete(`/products/${id}`);
             toast.success("Product Marked as out of Stock");
             window.location.reload();
-        } catch(error : any) {
-            toast.error(error.response?.data?.message || "Failed to update product");
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Failed to update product");
         }
     };
 
@@ -46,34 +45,39 @@ export default function AdminProducts() {
     };
 
     const confirmMarkOutOfStock = async () => {
-    if (!selectedProduct) return;
-    await handleMarkOutOfStock(selectedProduct.id,selectedProduct.name);
-    setShowAlert(false);
-    setSelectedProduct(null);
-};
+        if (!selectedProduct) return;
 
+        await handleMarkOutOfStock(selectedProduct.id);
+        setShowAlert(false);
+        setSelectedProduct(null);
+    };
 
-    if (loading) return <Loading />
+    if (loading) return <Loading />;
+
     return (
         <>
-        {showAlert && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <Alert message={`Do you really want to mark ${selectedProduct?.name} as Out of Stock? `}
-            onConfirm={confirmMarkOutOfStock}
-            onCancel={() => {
-                setShowAlert(false);
-                setSelectedProduct(null);
-            }} />
-            </div>
-    )}
+            {showAlert && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <Alert
+                        message={`Do you really want to mark ${selectedProduct?.name} as Out of Stock?`}
+                        onConfirm={confirmMarkOutOfStock}
+                        onCancel={() => {
+                            setShowAlert(false);
+                            setSelectedProduct(null);
+                        }}
+                    />
+                </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-app-border overflow-hidden">
                 <div className="px-6 py-5 border-b border-app-border flex items-center justify-between gap-4 flex-wrap">
                     <h2 className="text-xl font-semibold text-zinc-900">Products</h2>
+
                     <Link to="/admin/products/new" className="flex items-center gap-2 px-4 py-2 bg-app-green text-white rounded-xl hover:bg-green-950 transition-colors font-medium text-sm">
                         <PlusIcon className="size-4" /> Add Product
                     </Link>
                 </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead className="bg-app-cream/50 text-zinc-500 uppercase text-xs font-semibold">
@@ -84,35 +88,47 @@ export default function AdminProducts() {
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
+
                         <tbody className="divide-y divide-app-border">
                             {products.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-8 text-center text-zinc-500">No products found.</td>
                                 </tr>
                             ) : (
-                                products.map(product => (
+                                products.map((product) => (
                                     <tr key={product.id} className="hover:bg-zinc-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <img src={product.image} alt={product.name} className="size-12 rounded-lg object-cover" />
+
                                                 <div>
                                                     <p className="font-semibold text-zinc-900">{product.name}</p>
                                                     <p className="text-xs text-zinc-500">{product.category || "Uncategorized"}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 font-medium">{currency}{product.price.toFixed(2)}</td>
+
+                                        <td className="px-6 py-4 font-medium">
+                                            {currency}{product.price.toFixed(2)}
+                                        </td>
+
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${product.stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                                                 {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
                                             </span>
                                         </td>
+
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link to={`/admin/products/${product.id}/edit`} className="p-2 text-zinc-500 hover:text-app-orange bg-zinc-100 hover:bg-orange-50 rounded-lg transition-colors">
                                                     <EditIcon className="size-4" />
                                                 </Link>
-                                                <button onClick={() => onConfirm(product.id, product.name) } title="Mark Out of Stock" className="p-2 text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 rounded-lg transition-colors">
+
+                                                <button
+                                                    onClick={() => onConfirm(product.id, product.name)}
+                                                    title="Mark Out of Stock"
+                                                    className="p-2 text-zinc-500 hover:text-red-600 bg-zinc-100 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
                                                     <XIcon className="size-4" />
                                                 </button>
                                             </div>
