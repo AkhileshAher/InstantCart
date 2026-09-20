@@ -28,7 +28,7 @@ const Footer = () => {
                             <h3 className="text-sm font-semibold uppercase mb-4">{section.title}</h3>
                             <ul className="space-y-2.5">
                                 {section.links.map((link, i) => (
-                                    <li>
+                                    <li key={i}>
                                         {link.to ? (
                                             <Link to={link.to} className="text-sm text-white/70 hover:text-white">
                                                 {link.label}
