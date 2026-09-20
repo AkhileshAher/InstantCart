@@ -37,8 +37,8 @@ jwt:
 
 
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID} #"rzp_test_Td0Wic3t3B5luP"
-  key-secret: ${RAZORPAY_KEY_SECRET} #"W8vriNtysoeNTaZbinDt4DYw"
+  key-id: ${RAZORPAY_KEY_ID}
+  key-secret: ${RAZORPAY_KEY_SECRET}
 
 server:
   port: 9091
