@@ -31,8 +31,8 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie
                 .from("access-token", serviceResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("None")
                 .path("/")
                 .maxAge(Duration.ofHours(1))
                 .build();
@@ -47,18 +47,16 @@ public class AuthController {
     public ResponseEntity<AuthServiceResponse> loginUser(
             @RequestBody @Valid LoginRequest request) {
 
-
         AuthServiceResponse serviceResponse = authService.login(request);
 
         ResponseCookie cookie = ResponseCookie
                 .from("access-token", serviceResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(false) // true in production
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("None")
                 .path("/")
                 .maxAge(Duration.ofHours(1))
                 .build();
-
 
         return ResponseEntity
                 .ok()
@@ -67,15 +65,16 @@ public class AuthController {
     }
 
     @PostMapping("/delivery-login")
-    public ResponseEntity<AuthServiceResponse> deliveryLogin(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<AuthServiceResponse> deliveryLogin(
+            @RequestBody @Valid LoginRequest request) {
 
         AuthServiceResponse serviceResponse = authService.login(request);
 
         ResponseCookie cookie = ResponseCookie
                 .from("access-token", serviceResponse.getAccessToken())
                 .httpOnly(true)
-                .secure(false) // true in production
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("None")
                 .path("/")
                 .maxAge(Duration.ofHours(1))
                 .build();
@@ -88,11 +87,13 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            HttpServletResponse response
-    ) {
-        ResponseCookie cookie = ResponseCookie.from("access-token", "")
+            HttpServletResponse response) {
+
+        ResponseCookie cookie = ResponseCookie
+                .from("access-token", "")
                 .httpOnly(true)
                 .secure(true)
+                .sameSite("None")
                 .path("/")
                 .maxAge(0)
                 .build();
@@ -107,8 +108,11 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<RememberResponse> me(
-            Authentication authentication
-    ) {
+            Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         JwtPrincipal principal =
                 (JwtPrincipal) authentication.getPrincipal();
@@ -122,6 +126,4 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-
-
 }
