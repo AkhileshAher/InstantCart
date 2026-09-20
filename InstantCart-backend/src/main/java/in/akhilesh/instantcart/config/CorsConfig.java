@@ -18,7 +18,13 @@ public class CorsConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of(
+                "https://instantcart-blond.vercel.app",
+                "https://instantcart-git-main-akhilesh-ahers-projects.vercel.app/",
+                "https://instantcart-nrc4t480n-akhilesh-ahers-projects.vercel.app/",
+                "https://instantcart-akhilesh-ahers-projects.vercel.app/")
+        );
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of("*"));
