@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class AuthRequest {
+public class RegisterRequest {
 
     @NotBlank(message = "Name is required")
     @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
@@ -20,9 +20,6 @@ public class AuthRequest {
     @NotBlank(message = "Password is Required")
     @Size(min = 8, message = "Password Must Contain Atleast 8 characters")
     private String password;
-
-    @NotNull(message = "UserRole is Required")
-    private UserRole role;
 
     @Pattern(regexp = "^\\+91[6-9]\\d{9}$", message = "Phone number must be a valid Indian number starting with +91")
     private String phone;

@@ -1,27 +1,32 @@
 package in.akhilesh.instantcart.entity;
 
-import lombok.Data;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
-@Data
-@Document(collection = "delivery_partners")
+@Getter
+@Setter
+@Entity
+@Table(name = "delivery_partners")
 public class DeliveryPartner {
 
     @Id
-    private ObjectId id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
     private String password;
 
     private String phone;
@@ -32,9 +37,12 @@ public class DeliveryPartner {
 
     private Boolean isActive = true;
 
-    @CreatedDate
+    @OneToMany(mappedBy = "deliveryPartner")
+    private List<Order> orders = new ArrayList<>();
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 }

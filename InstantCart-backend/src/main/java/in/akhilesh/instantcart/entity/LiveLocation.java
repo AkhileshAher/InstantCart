@@ -1,8 +1,12 @@
 package in.akhilesh.instantcart.entity;
 
-import lombok.Data;
+import jakarta.persistence.Embeddable;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@Embeddable
 public class LiveLocation {
 
     private Double lat;

@@ -1,27 +1,31 @@
 package in.akhilesh.instantcart.entity;
 
-import lombok.Data;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-@Data
-@Document(collection = "addresses")
+@Getter
+@Setter
+@Entity
+@Table(name = "addresses")
 public class Address {
 
     @Id
-    private ObjectId id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private ObjectId userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String label;
 
-    private String address;
+    @Column(name = "address_line")
+    private String addressLine;
 
     private String city;
 
@@ -29,15 +33,16 @@ public class Address {
 
     private String zip;
 
-    private Boolean isDefault = false;
-
     private Double lat;
 
     private Double lng;
 
-    @CreatedDate
+    @Column(name = "is_default")
+    private Boolean isDefault = false;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 }

@@ -1,15 +1,10 @@
 package in.akhilesh.instantcart.utils;
 
 import in.akhilesh.instantcart.dto.TokenRequest;
-import in.akhilesh.instantcart.dto.user.AuthRequest;
-import in.akhilesh.instantcart.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -80,10 +75,10 @@ public class JWTUtil {
                 .get("role", String.class);
     }
 
-    public ObjectId getUserIdFromToken(String token) {
+    public Long getUserIdFromToken(String token) {
         String userId = extractClaims(token)
                 .get("userId", String.class);
-        return new ObjectId(userId);
+        return new Long(userId);
     }
 
 }
