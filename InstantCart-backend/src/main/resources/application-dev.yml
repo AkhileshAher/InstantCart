@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: InstantCart-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3305/instantcart
+    username: root
+    password: 1234
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173/
+
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: dummy@gmail.com
+    password: abc123
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  secret:
+    key: abcdefghiljklmnopqrstuvwxyzsndjshdjkahsdhakjshda
+  expiration: 3600000
+refresh:
+  expiration-days: 15
+
+
+razorpay:
+  key-id: rzp_test_U1itUbUR5sOYlH
+  key-secret: iz1D6fpAsvM9VPJJuHEvMqCb
+
+server:
+  port: 9091
+
+
+cloudinary:
+  cloud:
+    name: dohlwhmao
+    key: 323856646136442
+    secret: DJ-LRI6rzyaOxymGWAlouPTyDOg
+
+
+#debug: true
+#logging:
+#  level:
+#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+#    org.springframework.data.mongodb.repository.query: DEBUG
+#    org.mongodb.driver.protocol.command: DEBUG

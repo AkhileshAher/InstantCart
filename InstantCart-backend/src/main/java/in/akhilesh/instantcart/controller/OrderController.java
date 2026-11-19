@@ -1,23 +1,22 @@
 package in.akhilesh.instantcart.controller;
 
-import in.akhilesh.instantcart.dto.order.CreateOrderRequest;
-import in.akhilesh.instantcart.dto.order.OrderResponse;
-import in.akhilesh.instantcart.entity.LiveLocation;
+import in.akhilesh.instantcart.dto.OrderResponse;
+import in.akhilesh.instantcart.dto.PlaceOrderRequest;
 import in.akhilesh.instantcart.entity.Order;
-import in.akhilesh.instantcart.entity.enums.OrderStatus;
-import in.akhilesh.instantcart.security.JwtPrincipal;
+import in.akhilesh.instantcart.entity.User;
+import in.akhilesh.instantcart.payload.ApiResponse;
 import in.akhilesh.instantcart.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
+/** Customer orders. The customer is the only one who sees the delivery OTP. */
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -25,91 +24,58 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderResponse> getOrder(
-            @PathVariable ObjectId orderId,
-            Authentication authentication
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-
-        OrderResponse response = orderService.getOrder(orderId, userId);
-
-        return ResponseEntity.ok(response);
+    @PostMapping
+    public ResponseEntity<ApiResponse<OrderResponse>> place(@AuthenticationPrincipal User user, @Valid @RequestBody PlaceOrderRequest req) {
+        Order order = orderService.place(user, req);
+        OrderResponse orderResponse = OrderResponse.from(order, true);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.CREATED.value(),
+                        "Order placed successfully",
+                        orderResponse
+                ));
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getUserOrders(
-            Authentication authentication,
-            @RequestParam(value = "status", required = false) OrderStatus status
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-        List<OrderResponse> userOrders = orderService.getUserOrders(userId, status);
-        return ResponseEntity.ok(userOrders);
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> myOrders(@AuthenticationPrincipal User user) {
+        List<OrderResponse> allOrder = orderService.getAllOrder(user);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "All Order fetched successfully",
+                        allOrder
+                ));
     }
 
-    @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(
-            Authentication authentication,
-            @RequestBody @Valid CreateOrderRequest request
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-        OrderResponse response = orderService.createOrder(userId, request,false);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    /** Also used for live tracking: the response contains status history and liveLocation. */
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        OrderResponse userOrder = orderService.getUserOrder(user, id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Order fetched successfully",
+                        userOrder
+                ));
     }
 
-    @GetMapping("/{orderId}/location")
-    public ResponseEntity<LiveLocation> getOrderLocation(
-            @PathVariable ObjectId orderId,
-            Authentication authentication
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-
-        return ResponseEntity.ok(
-                orderService.getOrderLocation(
-                        orderId,
-                        userId
-                )
-        );
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancel(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        Order cancelled = orderService.cancel(user, id);
+        OrderResponse orderResponse = OrderResponse.from(cancelled, true);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Order cancelled successfully",
+                        orderResponse
+                ));
     }
-
-
-    @GetMapping("/my-orders")
-    public ResponseEntity<List<OrderResponse>> getMyOrdersToDeliver(
-            Authentication authentication,
-            @RequestParam String status
-    ) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-
-        ObjectId deliveryPartnerId = principal.getUserId();
-
-        List<OrderResponse> ordersList =
-                orderService.getOrdersOfDeliveryPartner(
-                        deliveryPartnerId,
-                        status
-                );
-
-        return ResponseEntity.ok(ordersList);
-    }
-
-    @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable ObjectId orderId, Authentication authentication) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-
-        orderService.deleteOrder(userId,orderId);
-
-        return ResponseEntity.noContent().build();
-
-    }
-
 }

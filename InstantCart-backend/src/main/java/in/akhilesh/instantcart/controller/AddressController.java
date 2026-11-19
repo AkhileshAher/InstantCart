@@ -1,75 +1,84 @@
 package in.akhilesh.instantcart.controller;
 
-import in.akhilesh.instantcart.dto.address.AddressRequest;
-import in.akhilesh.instantcart.dto.address.AddressResponse;
-import in.akhilesh.instantcart.security.JwtPrincipal;
+import in.akhilesh.instantcart.dto.AddressRequest;
+import in.akhilesh.instantcart.dto.AddressResponse;
+import in.akhilesh.instantcart.entity.User;
 import in.akhilesh.instantcart.service.AddressService;
+import in.akhilesh.instantcart.payload.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/address")
+@RequestMapping("/api/addresses")
 @RequiredArgsConstructor
 public class AddressController {
 
     private final AddressService addressService;
 
     @GetMapping
-    public ResponseEntity<List<AddressResponse>> getAddresses(Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-        return ResponseEntity.ok(addressService.fetchAddress(userId));
+    public ResponseEntity<ApiResponse<List<AddressResponse>>> getAll(@AuthenticationPrincipal User user) {
+
+        List<AddressResponse> allAddresses = addressService.getAllAddresses(user);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "All addresses fetched successfully",
+                        allAddresses
+                ));
+
     }
 
     @PostMapping
-    public ResponseEntity<AddressResponse> createAddress(
-            Authentication authentication, @RequestBody @Valid AddressRequest request
-    ) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
+    public ResponseEntity<ApiResponse<AddressResponse>> create(@AuthenticationPrincipal User user, @Valid @RequestBody AddressRequest req) {
 
-        AddressResponse response = addressService.createAddress(userId, request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+        AddressResponse address = addressService.createAddress(user, req);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.CREATED.value(),
+                        "Address created successfully",
+                        address
+                ));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AddressResponse> updateAddress(
-            @PathVariable ObjectId id,
-            Authentication authentication,
-            @RequestBody @Valid AddressRequest request
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-
-        return ResponseEntity.ok(addressService.updateAddress(
-                        id,
-                        userId,
-                        request
-                )
-        );
+    public ResponseEntity<ApiResponse<AddressResponse>> update(@AuthenticationPrincipal User user, @PathVariable Long id,
+                                  @Valid @RequestBody AddressRequest req) {
+        AddressResponse updatedAddress = addressService.updateAddress(user, id, req);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Address updated Successfully",
+                        updatedAddress
+                ));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAddress(
-            @PathVariable ObjectId id,
-            Authentication authentication
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId userId = principal.getUserId();
-
-        addressService.deleteAddress(id, userId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<Object>> delete(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        addressService.deleteAddress(user,id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.NO_CONTENT.value(),
+                        "Address deleted successfully",
+                        null
+                ));
     }
+
+
 }

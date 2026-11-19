@@ -1,10 +1,9 @@
 package in.akhilesh.instantcart.exception;
 
-import in.akhilesh.instantcart.dto.exception.ExceptionResponseDTO;
+import in.akhilesh.instantcart.payload.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -15,33 +14,53 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleProductFoundException(Exception e) {
-        ExceptionResponseDTO exceptionResponse = ExceptionResponseDTO.builder()
-                .message(e.getMessage())
-                .statusCode(HttpStatus.NOT_FOUND)
-                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
-                .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
+    public ResponseEntity<ApiResponse<Object>> handleProductFoundException(ProductNotFoundException ex) {
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateEmailException(DuplicateEmailException ex) {
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
-        ExceptionResponseDTO exceptionResponse = ExceptionResponseDTO.builder()
-                .message(e.getMessage())
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR)
-                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionResponse);
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponseDTO> handleException(Exception e, HttpServletRequest request) {
-        ExceptionResponseDTO exceptionResponse = ExceptionResponseDTO.builder()
-                .message(e.getMessage())
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR)
-                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .build();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exceptionResponse);
+    public ResponseEntity<ApiResponse<Object>> handleException(Exception ex, HttpServletRequest request) {
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                null
+        );
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }

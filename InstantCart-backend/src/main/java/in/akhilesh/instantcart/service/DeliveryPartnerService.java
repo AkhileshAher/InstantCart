@@ -1,17 +1,13 @@
 package in.akhilesh.instantcart.service;
 
-import in.akhilesh.instantcart.dto.delivery.DeliveryPartnerResponse;
+import in.akhilesh.instantcart.dto.DeliveryPartnerRequest;
+import in.akhilesh.instantcart.dto.DeliveryPartnerResponse;
 import in.akhilesh.instantcart.entity.DeliveryPartner;
 import in.akhilesh.instantcart.repository.DeliveryPartnerRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,78 +15,59 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DeliveryPartnerService {
 
-    private final DeliveryPartnerRepository repository;
+    private final DeliveryPartnerRepository partnerRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @PreAuthorize(value = "hasRole('VENDOR')")
-    @Cacheable(value = "allDeliveryPartners", key = "'all'")
-    public List<DeliveryPartnerResponse> getAllDeliveryPartners() {
-        return repository.findAll().stream()
-                .map(this::mapToDeliveryResponse)
-                .toList();
+    public List<DeliveryPartnerResponse> getAllPartners() {
+         return partnerRepository.findAll()
+                .stream()
+                .map(DeliveryPartnerResponse::from)
+                 .toList();
     }
 
-    @Cacheable(value = "activeDeliveryPartners", key = "'active'")
-    public List<DeliveryPartner> getActiveDeliveryPartners() {
-        return repository.findByIsActiveTrue();
+    public DeliveryPartnerResponse getPartnerById(Long id) {
+        return DeliveryPartnerResponse.from(find(id));
     }
 
-    @PreAuthorize(value = "hasRole('VENDOR')")
-    @Cacheable(value = "deliveryPartner", key = "#id.toHexString()")
-    public DeliveryPartnerResponse getDeliveryPartner(ObjectId id) {
-        DeliveryPartner deliveryPartner = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Delivery partner not found"));
-        return mapToDeliveryResponse(deliveryPartner);
-    }
-
-    @Transactional
-    @CacheEvict(value = "allDeliveryPartners", key = "'all'")
-    @PreAuthorize(value = "hasRole('VENDOR')")
-    public DeliveryPartnerResponse createDeliveryPartner(DeliveryPartner partner) {
-        if (repository.existsByEmail(partner.getEmail())) {
-            throw new RuntimeException("Delivery partner already exists");
+    public DeliveryPartnerResponse createDeliveryPartner(@Valid DeliveryPartnerRequest req) {
+        if (req.password() == null || req.password().isBlank()) {
+            throw new RuntimeException("Password is required");
         }
-        partner.setPassword(passwordEncoder.encode(partner.getPassword()));
-        DeliveryPartner saved = repository.save(partner);
-        return mapToDeliveryResponse(saved);
+        if (partnerRepository.existsByEmail(req.email())) {
+            throw new RuntimeException("Email already registered");
+        }
+        DeliveryPartner partner = new DeliveryPartner();
+        apply(partner, req);
+        partner.setPassword(passwordEncoder.encode(req.password()));
+        return DeliveryPartnerResponse.from(partnerRepository.save(partner));
     }
 
-    private DeliveryPartnerResponse mapToDeliveryResponse(DeliveryPartner saved) {
-        DeliveryPartnerResponse partner = new DeliveryPartnerResponse();
-        partner.setId(saved.getId().toHexString());
-        partner.setName(saved.getName());
-        partner.setEmail(saved.getEmail());
-        partner.setPhone(saved.getPhone());
-        partner.setAvatar(saved.getAvatar());
-        partner.setIsActive(saved.getIsActive());
-        partner.setVehicleType(saved.getVehicleType());
-        partner.setCreatedAt(saved.getCreatedAt());
-        partner.setUpdatedAt(saved.getUpdatedAt());
-        return partner;
+
+    public DeliveryPartnerResponse updatePartner(Long id, @Valid DeliveryPartnerRequest req) {
+        DeliveryPartner partner = find(id);
+        apply(partner, req);
+        if (req.password() != null && !req.password().isBlank()) {
+            partner.setPassword(passwordEncoder.encode(req.password()));
+        }
+        return DeliveryPartnerResponse.from(partnerRepository.save(partner));
     }
 
-    // Active or Deactivate Partner Or Not
-    @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "allDeliveryPartners", key = "'all'"),
-            @CacheEvict(value = "activeDeliveryPartners", key = "'active'"),
-            @CacheEvict(value = "deliveryPartner", key = "#partnerId.toHexString()")
-    })
-    @PreAuthorize(value = "hasRole('VENDOR')")
-    public DeliveryPartnerResponse updateStatus(ObjectId partnerId, Boolean status) {
-        DeliveryPartner partner = repository.findById(partnerId)
-                .orElseThrow(() -> new RuntimeException("Delivery Partner with this Id does not exist " + partnerId));
 
-        if (status == null) {
-            throw new IllegalArgumentException("Status cannot be null");
-        }
+    public DeliveryPartnerResponse toggleActive(Long id) {
+        DeliveryPartner partner = find(id);
+        partner.setIsActive(!partner.getIsActive());
+        return DeliveryPartnerResponse.from(partnerRepository.save(partner));
+    }
 
-        if (status != null && status.equals(partner.getIsActive())) {
-            throw new RuntimeException("status Already available");
-        }
 
-        partner.setIsActive(status);
-        DeliveryPartner saved = repository.save(partner);
-        return mapToDeliveryResponse(saved);
+    private DeliveryPartner find(Long id) {
+        return partnerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Delivery Partner Not Found"));
+    }
+
+    private void apply(DeliveryPartner p, DeliveryPartnerRequest r) {
+        p.setName(r.name());
+        p.setEmail(r.email());
+        p.setPhone(r.phone());
     }
 }

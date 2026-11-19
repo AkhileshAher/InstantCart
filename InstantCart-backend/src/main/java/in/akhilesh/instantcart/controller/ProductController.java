@@ -1,19 +1,17 @@
 package in.akhilesh.instantcart.controller;
 
-import in.akhilesh.instantcart.dto.product.ProductRequest;
-import in.akhilesh.instantcart.dto.product.ProductResponse;
-import in.akhilesh.instantcart.security.JwtPrincipal;
+import in.akhilesh.instantcart.dto.ProductRequest;
+import in.akhilesh.instantcart.dto.ProductResponse;
+import in.akhilesh.instantcart.payload.ApiResponse;
 import in.akhilesh.instantcart.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -23,96 +21,100 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @GetMapping("/popular")
-    public ResponseEntity<List<ProductResponse>> popularProducts(@RequestParam Integer limit) {
-        List<ProductResponse> productResponses = productService.popularProducts(limit);
-        return ResponseEntity.ok(productResponses);
-    }
-
-
-    @GetMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String q) {
-        return ResponseEntity.ok(productService.searchProducts(q));
-    }
+    // ---------- public ----------
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getProducts(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) String sort
-    ) {
-
-        List<ProductResponse> products = productService.getProducts(
-                sort,
-                category,
-                minPrice,
-                maxPrice
-        );
-        return ResponseEntity.ok(products);
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> search(@RequestParam(required = false) Long categoryId,
+                                                                     @RequestParam(defaultValue = "") String q) {
+        List<ProductResponse> productResponses = productService.searchProducts(categoryId, q);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "All Products fetched Successfully",
+                        productResponses
+                ));
     }
 
-    @GetMapping("/flash-deals")
-    public ResponseEntity<List<ProductResponse>> getFlashDeals() {
-
-        List<ProductResponse> flashDeals = productService.getFlashDeals();
-        return ResponseEntity.ok(flashDeals);
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long id) {
+        ProductResponse product = productService.getProduct(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Products fetched Successfully",
+                        product
+                ));
     }
 
-    @GetMapping("/{productId}")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable ObjectId productId) {
-        ProductResponse product = productService.getProduct(productId);
-        return ResponseEntity.ok(product);
+    // ---------- admin ----------
+
+    /**
+     * Includes inactive products, for the admin panel.
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllForAdmin() {
+        List<ProductResponse> allAdminProducts = productService.getAllAdminProducts();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "All Admin Products fetched Successfully",
+                        allAdminProducts
+                ));
     }
 
     @PostMapping
-    public ResponseEntity<ProductResponse> addProduct(
-            Authentication authentication,
-            @RequestBody @Valid ProductRequest request,
-            @RequestParam(value = "image",required = false)MultipartFile file
-            ) {
-
-        JwtPrincipal principal =
-                (JwtPrincipal) authentication.getPrincipal();
-        ObjectId vendorId = principal.getUserId();
-
-        ProductResponse product = productService.addProduct(vendorId, request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(product);
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ApiResponse<ProductResponse>> create(@Valid @RequestBody ProductRequest req) {
+        ProductResponse product = productService.createProduct(req);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.CREATED.value(),
+                        "Product created Successfully",
+                        product
+                ));
     }
 
-    @PutMapping("/{productId}")
-    public ResponseEntity<ProductResponse> updateProduct(
-            @PathVariable ObjectId productId,
-            Authentication authentication,
-            @RequestBody ProductRequest request
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId vendorId = principal.getUserId();
-
-        ProductResponse updatedProduct = productService.updateProduct(productId, vendorId, request);
-
-        return ResponseEntity.ok(updatedProduct);
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> update(@PathVariable Long id, @Valid @RequestBody ProductRequest req) {
+        ProductResponse updatedProduct = productService.updateProduct(id, req);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Product updated Successfully",
+                        updatedProduct
+                ));
     }
 
-    @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> deleteProduct(
-            @PathVariable ObjectId productId,
-            Authentication authentication
-    ) {
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
-        ObjectId vendorId = principal.getUserId();
-
-        productService.deleteProduct(
-                productId,
-                vendorId
-        );
-
-        return ResponseEntity.noContent().build();
+    /**
+     * Soft delete: the product is hidden but old orders keep working.
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<ApiResponse<Object>> delete(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        LocalDateTime.now(),
+                        HttpStatus.OK.value(),
+                        "Product deleted Successfully",
+                        null
+                ));
     }
+
+
 }

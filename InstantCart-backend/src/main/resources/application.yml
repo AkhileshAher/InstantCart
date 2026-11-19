@@ -1,6 +1,9 @@
 spring:
   application:
     name: InstantCart-backend
+  profiles:
+    active:
+      - dev
 
   data:
     mongodb:

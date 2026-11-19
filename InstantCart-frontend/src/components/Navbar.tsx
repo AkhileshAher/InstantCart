@@ -94,7 +94,8 @@ function Navbar() {
                   className="flex items-center gap-2 p-2"
                 >
                   <div className="size-7 rounded-full bg-green-950 text-white flex items-center justify-center">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.name.charAt(0).toUpperCase() || "U"}
+                    
                   </div>
                   <ChevronDownIcon className="size-3 text-zinc-500" />
                 </button>

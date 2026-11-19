@@ -1,298 +1,72 @@
 package in.akhilesh.instantcart.service;
 
-import in.akhilesh.instantcart.dto.payment.PaymentCartItem;
-import in.akhilesh.instantcart.dto.product.ProductRequest;
-import in.akhilesh.instantcart.dto.product.ProductResponse;
+import in.akhilesh.instantcart.dto.ProductRequest;
+import in.akhilesh.instantcart.dto.ProductResponse;
 import in.akhilesh.instantcart.entity.Product;
+import in.akhilesh.instantcart.repository.CategoryRepository;
 import in.akhilesh.instantcart.repository.ProductRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductRepository productRepository;
-    private final CloudinaryImageService cloudinary;
+    private final ProductRepository productRepo;
+    private final CategoryRepository categoryRepo;
 
 
-    @Cacheable(
-            value = "popularProducts",
-            key = "#limit",
-            unless = "#result == null"
-    )
-    public List<ProductResponse> popularProducts(Integer limit) {
-
-        Page<Product> productPage =
-                productRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "rating")));
-
-        return productPage.getContent()
-                .stream()
-                .map(this::mapProductToResponse)
-                .toList();
+    public List<ProductResponse> searchProducts(Long categoryId, String q) {
+        List<Product> result = (categoryId == null)
+                ? productRepo.findByIsActiveTrueAndNameContainingIgnoreCase(q)
+                : productRepo.findByCategoryIdAndIsActiveTrueAndNameContainingIgnoreCase(categoryId, q);
+        return result.stream().map(ProductResponse::from).toList();
     }
 
-    @Cacheable(
-            value = "searchProducts",
-            key = "#query.trim().toLowerCase()",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public List<ProductResponse> searchProducts(String query) {
-
-        if (query == null || query.isBlank()) {
-            return List.of();
-        }
-
-        return productRepository.searchProducts(query.trim())
-                .stream()
-                .map(this::mapProductToResponse)
-                .toList();
+    public ProductResponse getProduct(Long id) {
+        Product product = productRepo.findById(id)
+                .filter(Product::getIsActive)
+                .orElseThrow(() -> new RuntimeException("Product not Found"));
+        return ProductResponse.from(product);
     }
 
-
-    @Cacheable(
-            value = "products",
-            key = "T(java.util.Objects).toString(#sort, '') + ':' + " +
-                    "T(java.util.Objects).toString(#category, '') + ':' + " +
-                    "T(java.util.Objects).toString(#minPrice, '') + ':' + " +
-                    "T(java.util.Objects).toString(#maxPrice, '')",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public List<ProductResponse> getProducts(
-            String sort,
-            String category,
-            Double minPrice,
-            Double maxPrice
-    ) {
-
-        List<Product> products;
-        if (category != null && !category.isBlank()) {
-            products = productRepository.findByCategoryIgnoreCase(category);
-        } else {
-            products = productRepository.findAll();
-        }
-
-        // Price filtering
-        if (minPrice != null) {
-            products = products.stream()
-                    .filter(p -> p.getPrice() >= minPrice)
-                    .toList();
-        }
-
-        if (maxPrice != null) {
-            products = products.stream()
-                    .filter(p -> p.getPrice() <= maxPrice)
-                    .toList();
-        }
-
-        // Sorting
-        if ("price-asc".equalsIgnoreCase(sort)) {
-            products = products.stream()
-                    .sorted(Comparator.comparing(Product::getPrice))
-                    .toList();
-        }
-        else if ("price-desc".equalsIgnoreCase(sort)) {
-            products = products.stream()
-                    .sorted(Comparator.comparing(
-                            Product::getPrice
-                    ).reversed())
-                    .toList();
-        }
-        else if ("rating".equalsIgnoreCase(sort)) {
-
-            products = products.stream()
-                    .sorted(Comparator.comparing(
-                            Product::getRating
-                    ).reversed())
-                    .toList();
-        }
-        return products.stream().map(this::mapProductToResponse).toList();
+    public List<ProductResponse> getAllAdminProducts() {
+        return productRepo.findAll().stream().map(ProductResponse::from).toList();
     }
 
-    @Cacheable(
-            value = "flashDeals",
-            key = "'all'",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public List<ProductResponse> getFlashDeals() {
-
-        return productRepository
-                .findByStockGreaterThan(0)
-                .stream()
-                .map(this::calculateDiscount)
-                .filter(p -> p.getDiscount() > 0)
-                .sorted(
-                        Comparator.comparing(
-                                Product::getDiscount
-                        ).reversed()
-                )
-                .map(this::mapProductToResponse)
-                .toList();
-    }
-
-    @Cacheable(
-            value = "productById",
-            key = "#productId.toHexString()"
-    )
-    public ProductResponse getProduct(ObjectId productId) {
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        ProductResponse response = mapProductToResponse(product);
-        return response;
-    }
-
-    @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "products", allEntries = true),
-            @CacheEvict(value = "popularProducts", allEntries = true),
-            @CacheEvict(value = "searchProducts", allEntries = true),
-            @CacheEvict(value = "flashDeals", allEntries = true)
-    })
-    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
-    public ProductResponse addProduct(ObjectId vendorId, ProductRequest request) {
-
-        Product product = mapRequestToProduct(request,vendorId);
-        Product savedProduct = productRepository.save(product);
-        ProductResponse response = mapProductToResponse(savedProduct);
-        return response;
-    }
-
-    @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "productById", key = "#productId.toHexString()"),
-            @CacheEvict(value = "products", allEntries = true),
-            @CacheEvict(value = "popularProducts", allEntries = true),
-            @CacheEvict(value = "searchProducts", allEntries = true),
-            @CacheEvict(value = "flashDeals", allEntries = true)
-    })
-    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
-    public ProductResponse updateProduct(ObjectId productId, ObjectId vendorId, ProductRequest request) {
-
-        Product product = productRepository.findByIdAndVendorId(productId, vendorId)
-                .orElseThrow(() ->
-                        new AccessDeniedException("You are not allowed to update this product")
-                );
-
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-        product.setOriginalPrice(request.getOriginalPrice());
-        product.setImage(request.getImage());
-        product.setCategory(request.getCategory());
-        product.setUnit(request.getUnit());
-        product.setStock(request.getStock());
-        product.setIsOrganic(request.getIsOrganic());
-
-        Product updatedProduct = productRepository.save(product);
-        return mapProductToResponse(updatedProduct);
-    }
-
-    @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "productById", key = "#productId.toHexString()"),
-            @CacheEvict(value = "products", allEntries = true),
-            @CacheEvict(value = "popularProducts", allEntries = true),
-            @CacheEvict(value = "searchProducts", allEntries = true),
-            @CacheEvict(value = "flashDeals", allEntries = true)
-    })
-    @PreAuthorize("hasRole('VENDOR') and #vendorId == authentication.principal.userId")
-    public void deleteProduct(ObjectId productId, ObjectId vendorId) {
-
-        Product product = productRepository
-                .findByIdAndVendorId(productId, vendorId)
-                .orElseThrow(() -> new AccessDeniedException("You are not allowed to delete this product"));
-        if(product.getStock() == 0) {
-            throw new RuntimeException("Product is Already Out of Stock");
-        }
-        product.setStock(0);
-        productRepository.save(product);
-    }
-
-    public Double checkoutTotalPrice(List<PaymentCartItem> items) {
-        double subtotal = 0.0;
-
-        for (PaymentCartItem item : items) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
-
-            double itemTotal = product.getPrice() * item.getQuantity();
-
-            subtotal += itemTotal;
-        }
-
-        subtotal += subtotal >= 200 ? 0 : 40;
-        subtotal += subtotal * 0.05;
-
-        System.out.println("subtotal: " + subtotal);
-
-        return subtotal;
-
-    }
-
-    private Product calculateDiscount(Product product) {
-
-        if (product.getOriginalPrice() != null &&
-                product.getOriginalPrice() > 0 &&
-                product.getPrice() != null) {
-
-            double discount =
-                    ((product.getOriginalPrice() - product.getPrice()) / product.getOriginalPrice()) * 100;
-
-            product.setDiscount((int) Math.round(discount));
-        } else {
-            product.setDiscount(0);
-        }
-
-        return product;
-    }
-
-
-
-    private ProductResponse mapProductToResponse(Product savedProduct) {
-        ProductResponse response = new ProductResponse();
-        response.setId(savedProduct.getId().toHexString());
-        response.setName(savedProduct.getName());
-        response.setImage(savedProduct.getImage());
-        response.setDescription(savedProduct.getDescription());
-        response.setCategory(savedProduct.getCategory());
-        response.setUnit(savedProduct.getUnit());
-        response.setStock(savedProduct.getStock());
-        response.setIsOrganic(savedProduct.getIsOrganic());
-        response.setPrice(savedProduct.getPrice());
-        response.setOriginalPrice(savedProduct.getOriginalPrice());
-        response.setVendorId(savedProduct.getVendorId().toHexString());
-        return response;
-    }
-
-    private Product mapRequestToProduct(ProductRequest request,ObjectId vendorId) {
+    public ProductResponse createProduct(@Valid ProductRequest req) {
         Product product = new Product();
-
-        product.setVendorId(vendorId);
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-        product.setOriginalPrice(request.getOriginalPrice());
-        product.setImage(request.getImage());
-        product.setCategory(request.getCategory());
-        product.setUnit(request.getUnit());
-        product.setStock(request.getStock());
-        product.setIsOrganic(request.getIsOrganic());
-        return product;
+        apply(product, req);
+        return ProductResponse.from(productRepo.save(product));
     }
 
+    public ProductResponse updateProduct(Long id, @Valid ProductRequest req) {
+        Product product = productRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product Not Found"));
+        apply(product, req);
+        return ProductResponse.from(productRepo.save(product));
+    }
 
+    public void deleteProduct(Long id) {
+        Product product = productRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product Not Found"));
+        product.setIsActive(false);
+        productRepo.save(product);
+    }
 
+    private void apply(Product p, ProductRequest r) {
+        p.setCategory(categoryRepo.findById(r.categoryId())
+                .orElseThrow(() -> new RuntimeException("Category Not Found")));
+        p.setName(r.name());
+        p.setDescription(r.description() == null ? "" : r.description());
+        p.setPrice(r.price());
+        p.setOriginalPrice(r.originalPrice() == null ? r.price() : r.originalPrice());
+        p.setDiscountPercent(r.discountPercent() == null ? 0 : r.discountPercent());
+        p.setImage(r.image());
+        p.setUnit(r.unit() == null ? "piece" : r.unit());
+        p.setStock(r.stock() == null ? 0 : r.stock());
+        p.setIsOrganic(Boolean.TRUE.equals(r.isOrganic()));
+    }
 }

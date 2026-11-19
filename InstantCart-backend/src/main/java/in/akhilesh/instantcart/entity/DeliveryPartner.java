@@ -31,9 +31,12 @@ public class DeliveryPartner {
 
     private String phone;
 
-    private String avatar = "";
+    @Column(name = "avatar_url")
+    private String avatar = "https://placehold.net/avatar-5.png";
 
-    private String vehicleType = "bike";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.DELIVERY_PARTNER;
 
     private Boolean isActive = true;
 

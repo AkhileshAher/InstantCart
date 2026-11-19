@@ -1,9 +1,10 @@
 package in.akhilesh.instantcart.config;
 
-import in.akhilesh.instantcart.entity.enums.Permission;
-import in.akhilesh.instantcart.entity.enums.UserRole;
 import in.akhilesh.instantcart.security.CustomUserDetailsService;
-import in.akhilesh.instantcart.security.JwtAuthFilter;
+import in.akhilesh.instantcart.security.JwtAuthenticationFilter;
+import in.akhilesh.instantcart.security.RestAccessDeniedHandler;
+import in.akhilesh.instantcart.security.RestAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,7 +25,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,6 +39,11 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
         return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new CustomUserDetailsService();
     }
 
     @Bean
@@ -47,24 +58,33 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             DaoAuthenticationProvider provider,
-            JwtAuthFilter jwtAuthFilter)
+            JwtAuthenticationFilter jwtAuthenticationFilter)
     {
 
         httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
-
-                .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                .authenticationProvider(provider)
-
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/products/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/verify-registration",
+                                "/api/auth/login",
+                                "/api/auth/refresh",
+                                "/api/auth/logout"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
-
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling(exception ->
+                        exception
+                                .authenticationEntryPoint(restAuthenticationEntryPoint)
+                                .accessDeniedHandler(restAccessDeniedHandler))
+                .sessionManagement(
+                        session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(provider)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 

@@ -43,6 +43,9 @@ public class Order {
     })
     private LiveLocation liveLocation;
 
+    @Embedded
+    private ShippingAddress shippingAddress;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PLACED;

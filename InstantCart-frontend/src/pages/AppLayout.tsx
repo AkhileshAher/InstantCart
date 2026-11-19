@@ -12,7 +12,7 @@ function AppLayout() {
 
   if (loading) {return <Loading />;}
 
-  if (user?.role === "DELIVERY") { return <Navigate to="/delivery" replace />;}
+  if (user?.role === "DELIVERY_PARTNER") { return <Navigate to="/delivery" replace />;}
 
   return (
     <>

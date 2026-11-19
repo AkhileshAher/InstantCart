@@ -35,7 +35,11 @@ public class User implements UserDetails {
 
     private String phone = "";
 
-    private String avatar = "";
+    @Column(name = "avatar_url")
+    private String avatar = "https://placehold.net/avatar-5.png";
+
+    @Column(nullable = false)
+    private boolean emailVerified = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

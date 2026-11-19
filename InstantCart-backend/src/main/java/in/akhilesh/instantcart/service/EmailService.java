@@ -1,8 +1,8 @@
 package in.akhilesh.instantcart.service;
 
-import in.akhilesh.instantcart.dto.OrderEmailData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -13,55 +13,32 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender javaMailSender;
+    private final MailSender mailSender;
 
+    public void sendOtpEmail(String toEmail, String otp) {
 
-    public void sendMail(String to, String subject, OrderEmailData emailData) {
-        String body = """
-        Hello InstantCart User,
+        String mailMessage = String.format("""
+                Hello,
+                
+                Thank you for registering with InstantCart!
+                
+                To verify your email address, please use the following One-Time Password (OTP):
+                
+                {{OTP}}
+                
+                This OTP is valid for 5 minutes. Please do not share it with anyone.
+                
+                If you did not request this verification, you can safely ignore this email.
+                
+                Happy Shopping!
+                
+                Team InstantCart""", otp);
 
-        Welcome to InstantCart!
-
-        Your OTP is: %s
-
-        Order Details
-        -------------------------
-        Order ID: %s
-        Order Date: %s
-        Order Status: %s
-
-        Items:
-        %s
-
-        Subtotal: ₹%.2f
-        Delivery Fee: ₹%.2f
-        Total Amount: ₹%.2f
-
-        Delivery Address:
-        %s
-
-        Thank you for choosing InstantCart!
-
-        InstantCart Team
-        """.formatted(
-                emailData.getOtp(),
-                emailData.getOrderId(),
-                emailData.getOrderDate(),
-                emailData.getOrderStatus(),
-                emailData.getOrderItems(),
-                emailData.getSubtotal(),
-                emailData.getDeliveryFee(),
-                emailData.getTotalAmount(),
-                emailData.getDeliveryAddress()
-        );
-        try {
-            SimpleMailMessage mail = new SimpleMailMessage();
-            mail.setTo(to);
-            mail.setSubject(subject);
-            mail.setText(body);
-            javaMailSender.send(mail);
-        } catch (Exception e) {
-            log.error("Failed to send email to {} (subject: {}): {}", to, subject, e.getMessage(), e);
-        }
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Verify Your Email – InstantCart");
+        message.setText(mailMessage);
+        mailSender.send(message);
     }
 
 }
